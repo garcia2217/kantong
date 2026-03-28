@@ -146,18 +146,12 @@ export function Sidebar() {
 
   return (
     <aside
-      className="hidden md:flex"
+      className="hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex md:w-40 md:flex-col md:overflow-y-auto"
       style={{
-        width: 160,
-        height: "100vh",
-        position: "sticky",
-        top: 0,
-        flexDirection: "column",
         flexShrink: 0,
         background: "var(--color-bg-sidebar)",
         borderRight: "0.5px solid var(--color-border)",
         padding: "var(--space-4) var(--space-3)",
-        overflowY: "auto",
       }}
     >
       {/* App name */}

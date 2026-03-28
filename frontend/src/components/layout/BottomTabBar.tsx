@@ -11,7 +11,7 @@ export function BottomTabBar() {
     <nav
       role="navigation"
       aria-label="Tab bar navigation"
-      className="md:hidden"
+      className="flex md:hidden items-center justify-around"
       style={{
         position: "fixed",
         bottom: 0,
@@ -21,9 +21,6 @@ export function BottomTabBar() {
         paddingBottom: "env(safe-area-inset-bottom)",
         background: "var(--color-bg-sidebar)",
         borderTop: "0.5px solid var(--color-border)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-around",
         zIndex: 100,
       }}
     >
