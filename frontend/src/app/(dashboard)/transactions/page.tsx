@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { AddTransactionSheet } from "@/src/components/features/AddTransactionSheet";
 import { useQuery } from "@tanstack/react-query";
 import { TransactionRow } from "@/src/components/ui/TransactionRow";
 import { transactionService } from "@/src/lib/api/services/transactions";
@@ -51,6 +52,8 @@ function SkeletonRows() {
 // ─── Transactions Page ────────────────────────────────────────────────────────
 
 export default function TransactionsPage() {
+  const [sheetOpen, setSheetOpen] = useState(false);
+
   const { data: transactions, isLoading: loadingTx } = useQuery({
     queryKey: TRANSACTION_KEYS.all,
     queryFn: transactionService.getAll,
@@ -101,9 +104,9 @@ export default function TransactionsPage() {
         >
           Transactions
         </h1>
-        {/* TODO: wire to Add Transaction sheet in Step 9 */}
         <button
           aria-label="Add transaction"
+          onClick={() => setSheetOpen(true)}
           style={{
             minWidth: 44,
             minHeight: 44,
@@ -134,6 +137,9 @@ export default function TransactionsPage() {
       >
         Transactions
       </h1>
+
+      {/* Add transaction sheet */}
+      <AddTransactionSheet isOpen={sheetOpen} onClose={() => setSheetOpen(false)} />
 
       {/* Content */}
       {loadingTx ? (

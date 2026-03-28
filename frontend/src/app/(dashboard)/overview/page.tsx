@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { AddTransactionSheet } from "@/src/components/features/AddTransactionSheet";
 import { StatCard } from "@/src/components/ui/StatCard";
 import { TransactionRow } from "@/src/components/ui/TransactionRow";
 import { walletService } from "@/src/lib/api/services/wallets";
@@ -15,6 +16,7 @@ import { formatIDRCompact, getCurrentYearMonth } from "@/src/lib/utils/format";
 // ─── Overview Page ────────────────────────────────────────────────────────────
 
 export default function OverviewPage() {
+  const [sheetOpen, setSheetOpen] = useState(false);
   const { year, month } = getCurrentYearMonth();
 
   const { data: wallets, isLoading: loadingWallets } = useQuery({
@@ -94,9 +96,9 @@ export default function OverviewPage() {
         >
           Overview
         </h1>
-        {/* TODO: wire to Add Transaction sheet in Step 9 */}
         <button
           aria-label="Add transaction"
+          onClick={() => setSheetOpen(true)}
           style={{
             minWidth: 44,
             minHeight: 44,
@@ -181,6 +183,9 @@ export default function OverviewPage() {
         </span>
         <div style={{ flex: 1, height: "0.5px", background: "var(--color-border)" }} />
       </div>
+
+      {/* Add transaction sheet */}
+      <AddTransactionSheet isOpen={sheetOpen} onClose={() => setSheetOpen(false)} />
 
       {/* Transaction list */}
       {loadingTx ? (
