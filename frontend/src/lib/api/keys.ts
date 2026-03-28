@@ -15,8 +15,12 @@ export const CATEGORY_KEYS = {
 export const TRANSACTION_KEYS = {
   all: ["transactions"] as const,
   byWallet: (walletId: string) => ["transactions", "wallet", walletId] as const,
+  /** Full transaction list for a calendar month (array). */
   byMonth: (year: number, month: number) =>
     ["transactions", "month", year, month] as const,
+  /** Aggregated income/expense totals for a month — NOT the same shape as byMonth. */
+  monthlySummary: (year: number, month: number) =>
+    ["transactions", "monthlySummary", year, month] as const,
   recent: (limit: number) => ["transactions", "recent", limit] as const,
 };
 

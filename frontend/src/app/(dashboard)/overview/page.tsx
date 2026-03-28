@@ -30,7 +30,7 @@ export default function OverviewPage() {
   });
 
   const { data: monthlySummary, isLoading: loadingSummary } = useQuery({
-    queryKey: TRANSACTION_KEYS.byMonth(year, month),
+    queryKey: TRANSACTION_KEYS.monthlySummary(year, month),
     queryFn: () => transactionService.getMonthlySummary(year, month),
   });
 
