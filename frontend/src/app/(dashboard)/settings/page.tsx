@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/src/store/auth";
 import { walletService } from "@/src/lib/api/services/wallets";
 import { categoryService } from "@/src/lib/api/services/categories";
 import { WALLET_KEYS, CATEGORY_KEYS } from "@/src/lib/api/keys";
@@ -64,6 +66,26 @@ function PlusIcon() {
             aria-hidden="true"
         >
             <path d="M7 2V12M2 7H12" />
+        </svg>
+    );
+}
+
+function LogoutIcon() {
+    return (
+        <svg
+            width="18"
+            height="18"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <path d="M6 2H3C2.4 2 2 2.4 2 3V13C2 13.6 2.4 14 3 14H6" />
+            <path d="M11 11L14 8L11 5" />
+            <path d="M14 8H6" />
         </svg>
     );
 }
@@ -210,6 +232,8 @@ interface CategorySheetState {
 }
 
 export default function SettingsPage() {
+    const router = useRouter();
+    const logout = useAuthStore((s) => s.logout);
     const queryClient = useQueryClient();
 
     const [walletSheet, setWalletSheet] = useState<WalletSheetState>({
@@ -253,6 +277,11 @@ export default function SettingsPage() {
         ) {
             deleteCategory.mutate(category.id);
         }
+    };
+
+    const handleLogout = () => {
+        logout();
+        router.push("/login");
     };
 
     const incomeCategories = categories.filter((c) => c.type === "income");
@@ -609,6 +638,35 @@ export default function SettingsPage() {
                                 </button>
                             </>
                         )}
+                    </div>
+                </section>
+
+                {/* Mobile-only: log out (sidebar is hidden below md) */}
+                <section className="md:hidden" aria-label="Account">
+                    <div style={sectionCardStyle}>
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="rounded-[var(--radius-lg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "var(--space-2)",
+                                width: "100%",
+                                minHeight: 48,
+                                padding: "var(--space-3) var(--space-4)",
+                                background: "transparent",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "var(--text-base)",
+                                fontWeight: "var(--weight-medium)",
+                                color: "var(--color-text-secondary)",
+                            }}
+                        >
+                            <LogoutIcon />
+                            Log out
+                        </button>
                     </div>
                 </section>
             </main>
