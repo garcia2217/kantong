@@ -81,6 +81,23 @@ const IconDebts = ({ size = 16 }: IconProps) => (
   </svg>
 );
 
+const IconSettings = ({ size = 16 }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="8" cy="8" r="2" />
+    <path d="M8 1V3M8 13V15M1 8H3M13 8H15M3.2 3.2L4.6 4.6M11.4 11.4L12.8 12.8M12.8 3.2L11.4 4.6M4.6 11.4L3.2 12.8" />
+  </svg>
+);
+
 const IconLogout = ({ size = 16 }: IconProps) => (
   <svg
     width={size}
@@ -112,6 +129,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/transactions", label: "Transactions", Icon: IconTransactions },
   { href: "/budget", label: "Budget", Icon: IconBudget },
   { href: "/debts", label: "Debts", Icon: IconDebts },
+  { href: "/settings", label: "Settings", Icon: IconSettings },
 ];
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
