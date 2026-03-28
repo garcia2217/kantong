@@ -38,6 +38,8 @@ export const PERSON_KEYS = {
 
 export const DEBT_KEYS = {
   all: ["debts"] as const,
+  /** Net position summary — NOT the same shape as `all` (object vs array). */
+  netPosition: ["debts", "netPosition"] as const,
   byPerson: (personId: string) => ["debts", "person", personId] as const,
   byType: (type: "receivable" | "payable") => ["debts", type] as const,
 };

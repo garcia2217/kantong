@@ -25,7 +25,7 @@ export default function OverviewPage() {
   });
 
   const { data: netPosition, isLoading: loadingDebts } = useQuery({
-    queryKey: DEBT_KEYS.all,
+    queryKey: DEBT_KEYS.netPosition,
     queryFn: debtService.getNetPosition,
   });
 
