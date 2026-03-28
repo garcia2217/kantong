@@ -3,110 +3,14 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { StatCard } from "@/src/components/ui/StatCard";
+import { TransactionRow } from "@/src/components/ui/TransactionRow";
 import { walletService } from "@/src/lib/api/services/wallets";
 import { transactionService } from "@/src/lib/api/services/transactions";
 import { categoryService } from "@/src/lib/api/services/categories";
 import { debtService } from "@/src/lib/api/services/debts";
 import { WALLET_KEYS, TRANSACTION_KEYS, CATEGORY_KEYS, DEBT_KEYS } from "@/src/lib/api/keys";
-import { formatIDR, formatIDRCompact, formatTime, getCurrentYearMonth } from "@/src/lib/utils/format";
-import type { Transaction, Category } from "@/src/types";
+import { formatIDRCompact, getCurrentYearMonth } from "@/src/lib/utils/format";
 
-// ─── Category helpers ─────────────────────────────────────────────────────────
-
-const CATEGORY_EMOJI: Record<string, string> = {
-  "Food & Drink": "🍜",
-  "Transport": "🚗",
-  "Groceries": "🛒",
-  "Entertainment": "🎬",
-  "Health": "💊",
-  "Shopping": "🛍",
-  "Bills & Utilities": "📄",
-  "Subscriptions": "📱",
-  "Gifts": "🎁",
-  "Salary": "💼",
-  "Freelance": "💻",
-  "Investment": "📈",
-};
-
-// ─── Local TransactionRow ─────────────────────────────────────────────────────
-// TODO: extract to src/components/ui/TransactionRow.tsx in Step 8
-
-interface TransactionRowProps {
-  tx: Transaction;
-  category?: Category;
-}
-
-function TransactionRow({ tx, category }: TransactionRowProps) {
-  const isIncome = tx.type === "income";
-  const isTransfer = tx.type === "transfer";
-  const emoji = category ? (CATEGORY_EMOJI[category.name] ?? "•") : isTransfer ? "⇄" : "•";
-  const amountPrefix = isIncome ? "+" : isTransfer ? "" : "−";
-  const amountColor = isIncome ? "var(--color-positive)" : "var(--color-text-primary)";
-
-  return (
-    <div
-      className="tx-row"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "var(--space-3)",
-        padding: "var(--space-2) var(--space-3)",
-        borderRadius: "var(--radius-md)",
-        minHeight: 52,
-        cursor: "default",
-      }}
-    >
-      {/* Category icon */}
-      <div
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: "var(--radius-md)",
-          background: "var(--color-bg-hover)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 13,
-          flexShrink: 0,
-        }}
-      >
-        {emoji}
-      </div>
-
-      {/* Description + meta */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p
-          style={{
-            fontSize: "var(--text-base)",
-            color: "var(--color-text-primary)",
-            fontWeight: "var(--weight-medium)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {tx.description}
-        </p>
-        <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-tertiary)" }}>
-          {category?.name ?? (isTransfer ? "Transfer" : "—")} · {formatTime(tx.transaction_date)}
-        </p>
-      </div>
-
-      {/* Amount */}
-      <p
-        style={{
-          fontSize: "var(--text-sm)",
-          color: amountColor,
-          fontWeight: "var(--weight-medium)",
-          flexShrink: 0,
-        }}
-      >
-        {amountPrefix}
-        {formatIDR(tx.amount)}
-      </p>
-    </div>
-  );
-}
 
 // ─── Overview Page ────────────────────────────────────────────────────────────
 
