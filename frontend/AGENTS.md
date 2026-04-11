@@ -233,8 +233,8 @@ const fetchUser = async (): Promise<{ id: string; email: string }> => { ... }
 ```typescript
 // ✅ Preferred
 export const Role = {
-    ADMIN: "admin",
-    MEMBER: "member",
+  ADMIN: "admin",
+  MEMBER: "member",
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
 ```
@@ -331,8 +331,8 @@ Use Tailwind's standard breakpoints consistently. Never invent custom breakpoint
 ```tsx
 // ✅ Prevents text overflow in flex children
 <div className="flex gap-2">
-    <Icon className="shrink-0" />
-    <span className="min-w-0 truncate">{longText}</span>
+  <Icon className="shrink-0" />
+  <span className="min-w-0 truncate">{longText}</span>
 </div>
 ```
 
@@ -363,9 +363,9 @@ Use Tailwind's standard breakpoints consistently. Never invent custom breakpoint
 ### Navigation Patterns
 
 - **Desktop nav ≠ mobile nav.** A horizontal navbar with text links is almost always wrong on mobile. Use one of these patterns instead:
-    - **Hamburger menu** with a full-screen or slide-in drawer (for apps with many nav items)
-    - **Bottom tab bar** (for mobile-first apps with 3–5 primary destinations)
-    - **Simplified top bar** with icon-only or condensed links (for simple sites)
+  - **Hamburger menu** with a full-screen or slide-in drawer (for apps with many nav items)
+  - **Bottom tab bar** (for mobile-first apps with 3–5 primary destinations)
+  - **Simplified top bar** with icon-only or condensed links (for simple sites)
 - **Never show a horizontal scrolling nav bar** as the primary navigation on mobile unless it is clearly a secondary tab/filter bar (e.g., category pills).
 - **Active state must be obvious** on mobile nav — users cannot rely on hover to discover where they are.
 - Mobile menu open/close must be fully keyboard accessible and trap focus when open.
@@ -373,28 +373,28 @@ Use Tailwind's standard breakpoints consistently. Never invent custom breakpoint
 ```tsx
 // Pattern: responsive nav
 <nav>
-    {/* Desktop: shown at md and above */}
-    <ul className="hidden md:flex gap-6">...</ul>
+  {/* Desktop: shown at md and above */}
+  <ul className="hidden md:flex gap-6">...</ul>
 
-    {/* Mobile: hamburger trigger */}
-    <button className="md:hidden" aria-label="Open menu">
-        <MenuIcon />
-    </button>
+  {/* Mobile: hamburger trigger */}
+  <button className="md:hidden" aria-label="Open menu">
+    <MenuIcon />
+  </button>
 </nav>;
 
 {
-    /* Mobile drawer */
+  /* Mobile drawer */
 }
 {
-    isMenuOpen && (
-        <div
-            className="fixed inset-0 z-50 bg-white md:hidden"
-            role="dialog"
-            aria-modal="true"
-        >
-            ...
-        </div>
-    );
+  isMenuOpen && (
+    <div
+      className="fixed inset-0 z-50 bg-white md:hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      ...
+    </div>
+  );
 }
 ```
 
@@ -406,11 +406,11 @@ Use Tailwind's standard breakpoints consistently. Never invent custom breakpoint
 ```tsx
 // ✅ Correct — responsive image with sizes hint
 <Image
-    src="/hero.jpg"
-    alt="Hero image"
-    fill
-    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-    className="object-cover"
+  src="/hero.jpg"
+  alt="Hero image"
+  fill
+  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+  className="object-cover"
 />
 ```
 
@@ -421,11 +421,11 @@ Use Tailwind's standard breakpoints consistently. Never invent custom breakpoint
 
 - **Input font size must be at least 16px** (`text-base`). iOS Safari zooms in on inputs with `font-size < 16px` and does not zoom back — this is a critical UX bug.
 - **Input type matters on mobile.** Use the correct `type` attribute to trigger the right keyboard:
-    - `type="email"` → email keyboard with `@` key
-    - `type="tel"` → numeric keypad
-    - `type="number"` → numeric keyboard (add `inputMode="numeric"` for better mobile support)
-    - `type="search"` → search keyboard with return key labeled "Search"
-    - `type="url"` → URL keyboard
+  - `type="email"` → email keyboard with `@` key
+  - `type="tel"` → numeric keypad
+  - `type="number"` → numeric keyboard (add `inputMode="numeric"` for better mobile support)
+  - `type="search"` → search keyboard with return key labeled "Search"
+  - `type="url"` → URL keyboard
 - **Use `inputMode`** for fine-grained keyboard control (e.g., `inputMode="decimal"` for price inputs).
 - **`autocomplete` attributes** must be set on all standard fields (name, email, password, address) to enable autofill.
 - **Labels must always be visible** — never hidden or `placeholder`-only. On small screens, stacked labels (above the input) are preferred over inline/side labels.
@@ -456,7 +456,7 @@ Use Tailwind's standard breakpoints consistently. Never invent custom breakpoint
 ```tsx
 // ✅ Correct — respects notch/home indicator
 <div className="fixed bottom-0 left-0 right-0 pb-[env(safe-area-inset-bottom)] bg-white border-t">
-    <nav className="flex justify-around py-2">...</nav>
+  <nav className="flex justify-around py-2">...</nav>
 </div>
 ```
 
@@ -473,7 +473,7 @@ Choose one of these strategies based on the data:
 
 ```tsx
 <div className="overflow-x-auto rounded-md border">
-    <table className="min-w-full">...</table>
+  <table className="min-w-full">...</table>
 </div>
 ```
 
@@ -481,17 +481,17 @@ Choose one of these strategies based on the data:
 
 ```tsx
 {
-    /* Desktop table */
+  /* Desktop table */
 }
 <table className="hidden md:table">...</table>;
 
 {
-    /* Mobile cards */
+  /* Mobile cards */
 }
 <ul className="flex flex-col gap-3 md:hidden">
-    {rows.map((row) => (
-        <MobileRowCard key={row.id} data={row} />
-    ))}
+  {rows.map((row) => (
+    <MobileRowCard key={row.id} data={row} />
+  ))}
 </ul>;
 ```
 
@@ -509,18 +509,18 @@ Always choose the strategy that best preserves data readability. Document which 
 ```tsx
 // ✅ Responsive modal
 <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
-    <div
-        className="
+  <div
+    className="
     w-full rounded-t-2xl bg-white p-6
-    md:w-auto md:min-w-[480px] md:rounded-2xl
+    md:w-auto md:min-w-120 md:rounded-2xl
     max-h-[90vh] overflow-y-auto
   "
-    >
-        {children}
-        <button className="mt-4 w-full md:w-auto" onClick={onClose}>
-            Cancel
-        </button>
-    </div>
+  >
+    {children}
+    <button className="mt-4 w-full md:w-auto" onClick={onClose}>
+      Cancel
+    </button>
+  </div>
 </div>
 ```
 
@@ -626,27 +626,27 @@ Every interactive component must explicitly handle:
 import axios from "axios";
 
 export const apiClient = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    headers: { "Content-Type": "application/json" },
-    timeout: 10_000,
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  headers: { "Content-Type": "application/json" },
+  timeout: 10_000,
 });
 
 // Attach JWT from storage on every request
 apiClient.interceptors.request.use((config) => {
-    const token = getAccessToken(); // from cookie or memory
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
+  const token = getAccessToken(); // from cookie or memory
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
 
 // Handle 401 globally — trigger token refresh or logout
 apiClient.interceptors.response.use(
-    (res) => res,
-    async (error) => {
-        if (error.response?.status === 401) {
-            // handle refresh / redirect to login
-        }
-        return Promise.reject(error);
-    },
+  (res) => res,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // handle refresh / redirect to login
+    }
+    return Promise.reject(error);
+  },
 );
 ```
 
@@ -662,16 +662,16 @@ import { apiClient } from "../client";
 import type { User, UserUpdatePayload } from "@/types/user";
 
 export const getMe = async (): Promise<User> => {
-    const { data } = await apiClient.get<User>("/users/me");
-    return data;
+  const { data } = await apiClient.get<User>("/users/me");
+  return data;
 };
 
 export const updateUser = async (
-    id: string,
-    payload: UserUpdatePayload,
+  id: string,
+  payload: UserUpdatePayload,
 ): Promise<User> => {
-    const { data } = await apiClient.patch<User>(`/users/${id}`, payload);
-    return data;
+  const { data } = await apiClient.patch<User>(`/users/${id}`, payload);
+  return data;
 };
 ```
 
@@ -684,13 +684,13 @@ export const updateUser = async (
 ```typescript
 // ✅ Correct
 export const USER_KEYS = {
-    me: ["user", "me"] as const,
-    byId: (id: string) => ["user", id] as const,
+  me: ["user", "me"] as const,
+  byId: (id: string) => ["user", id] as const,
 };
 
 const { data: user, isLoading } = useQuery({
-    queryKey: USER_KEYS.me,
-    queryFn: getMe,
+  queryKey: USER_KEYS.me,
+  queryFn: getMe,
 });
 ```
 
