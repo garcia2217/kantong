@@ -20,7 +20,12 @@ apiClient.interceptors.response.use(
   },
   async (error: unknown) => {
     if (axios.isAxiosError(error) && error.response) {
-      if (error.response.status === 401 && typeof window !== "undefined") {
+      const isAuthEndpoint = error.config?.url?.startsWith("/auth/");
+      if (
+        error.response.status === 401 &&
+        !isAuthEndpoint &&
+        typeof window !== "undefined"
+      ) {
         window.location.href = "/login";
       }
 
