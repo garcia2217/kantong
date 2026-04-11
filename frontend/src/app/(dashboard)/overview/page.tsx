@@ -9,9 +9,13 @@ import { walletService } from "@/src/lib/api/services/wallets";
 import { transactionService } from "@/src/lib/api/services/transactions";
 import { categoryService } from "@/src/lib/api/services/categories";
 import { debtService } from "@/src/lib/api/services/debts";
-import { WALLET_KEYS, TRANSACTION_KEYS, CATEGORY_KEYS, DEBT_KEYS } from "@/src/lib/api/keys";
+import {
+  WALLET_KEYS,
+  TRANSACTION_KEYS,
+  CATEGORY_KEYS,
+  DEBT_KEYS,
+} from "@/src/lib/api/keys";
 import { formatIDRCompact, getCurrentYearMonth } from "@/src/lib/utils/format";
-
 
 // ─── Overview Page ────────────────────────────────────────────────────────────
 
@@ -61,7 +65,11 @@ export default function OverviewPage() {
 
   const savingsRate = useMemo(() => {
     if (!monthlySummary || monthlySummary.totalIncome === 0) return null;
-    return ((monthlySummary.totalIncome - monthlySummary.totalExpense) / monthlySummary.totalIncome) * 100;
+    return (
+      ((monthlySummary.totalIncome - monthlySummary.totalExpense) /
+        monthlySummary.totalIncome) *
+      100
+    );
   }, [monthlySummary]);
 
   const isStatsLoading = loadingWallets || loadingDebts || loadingSummary;
@@ -144,7 +152,11 @@ export default function OverviewPage() {
         <StatCard
           label="Total liabilities"
           value={formatIDRCompact(totalLiabilities)}
-          subtext={totalLiabilities > 0 ? "Outstanding payables" : "No outstanding debts"}
+          subtext={
+            totalLiabilities > 0
+              ? "Outstanding payables"
+              : "No outstanding debts"
+          }
           subtextType={totalLiabilities > 0 ? "negative" : "neutral"}
           isLoading={isStatsLoading}
         />
@@ -156,7 +168,9 @@ export default function OverviewPage() {
               ? `${formatIDRCompact(monthlySummary.totalIncome)} in · ${formatIDRCompact(monthlySummary.totalExpense)} out`
               : "No data this month"
           }
-          subtextType={savingsRate !== null && savingsRate >= 20 ? "positive" : "neutral"}
+          subtextType={
+            savingsRate !== null && savingsRate >= 20 ? "positive" : "neutral"
+          }
           isLoading={isStatsLoading}
         />
       </div>
@@ -170,7 +184,13 @@ export default function OverviewPage() {
           marginBottom: "var(--space-3)",
         }}
       >
-        <div style={{ flex: 1, height: "0.5px", background: "var(--color-border)" }} />
+        <div
+          style={{
+            flex: 1,
+            height: "0.5px",
+            background: "var(--color-border)",
+          }}
+        />
         <span
           style={{
             fontSize: "var(--text-xs)",
@@ -181,15 +201,30 @@ export default function OverviewPage() {
         >
           Recent transactions
         </span>
-        <div style={{ flex: 1, height: "0.5px", background: "var(--color-border)" }} />
+        <div
+          style={{
+            flex: 1,
+            height: "0.5px",
+            background: "var(--color-border)",
+          }}
+        />
       </div>
 
       {/* Add transaction sheet */}
-      <AddTransactionSheet isOpen={sheetOpen} onClose={() => setSheetOpen(false)} />
+      <AddTransactionSheet
+        isOpen={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+      />
 
       {/* Transaction list */}
       {loadingTx ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--space-1)",
+          }}
+        >
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
@@ -213,12 +248,20 @@ export default function OverviewPage() {
           No transactions yet
         </p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--space-1)",
+          }}
+        >
           {(recentTx ?? []).map((tx) => (
             <TransactionRow
               key={tx.id}
               tx={tx}
-              category={tx.category_id ? categoryMap[tx.category_id] : undefined}
+              category={
+                tx.category_id ? categoryMap[tx.category_id] : undefined
+              }
             />
           ))}
         </div>
