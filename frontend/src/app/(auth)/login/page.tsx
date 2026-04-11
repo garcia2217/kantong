@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,8 +33,15 @@ export default function LoginPage() {
     }
 
     setErrors({});
-    await login(result.data.username, result.data.password);
-    router.push("/overview");
+    setServerError(null);
+    try {
+      await login(result.data.username, result.data.password);
+      router.push("/overview");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      setServerError(message);
+    }
   };
 
   return (
@@ -178,6 +186,20 @@ export default function LoginPage() {
             )}
           </div>
 
+          {/* Server error */}
+          {serverError && (
+            <p
+              role="alert"
+              style={{
+                fontSize: "var(--text-sm)",
+                color: "var(--color-negative)",
+                textAlign: "center",
+              }}
+            >
+              {serverError}
+            </p>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
@@ -202,16 +224,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p
-          style={{
-            marginTop: "var(--space-6)",
-            textAlign: "center",
-            fontSize: "var(--text-xs)",
-            color: "var(--color-text-tertiary)",
-          }}
-        >
-          Any username and password will work
-        </p>
       </div>
     </div>
   );
