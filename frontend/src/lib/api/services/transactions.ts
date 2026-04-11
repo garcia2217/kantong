@@ -4,6 +4,21 @@ import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+// ─── Migration reference ──────────────────────────────────────────────────────
+// Replace each mock below with the corresponding apiClient call.
+// The response interceptor unwraps the envelope — callers receive T directly.
+//
+//   getAll:           const { data } = await apiClient.get<Transaction[]>("/transactions");
+//   getByWallet:      const { data } = await apiClient.get<Transaction[]>("/transactions", { params: { wallet_id } });
+//   getByMonth:       const { data } = await apiClient.get<Transaction[]>("/transactions", { params: { year, month } });
+//   getRecent:        const { data } = await apiClient.get<Transaction[]>("/transactions/recent", { params: { limit } });
+//   create:           const { data } = await apiClient.post<Transaction>("/transactions", payload);
+//   update:           const { data } = await apiClient.patch<Transaction>(`/transactions/${id}`, payload);
+//   delete:           await apiClient.delete(`/transactions/${id}`);
+//   getMonthlySummary: const { data } = await apiClient.get<{ totalIncome: number; totalExpense: number }>(
+//                       "/transactions/summary", { params: { year, month } });
+// ─────────────────────────────────────────────────────────────────────────────
+
 let store: Transaction[] = [...mockTransactions];
 
 export const transactionService = {

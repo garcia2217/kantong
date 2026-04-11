@@ -4,6 +4,20 @@ import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+// ─── Migration reference ──────────────────────────────────────────────────────
+// Replace each mock below with the corresponding apiClient call.
+// The response interceptor unwraps the envelope — callers receive T directly.
+//
+//   getAll:         const { data } = await apiClient.get<Wallet[]>("/wallets");
+//   getById:        const { data } = await apiClient.get<Wallet>(`/wallets/${id}`);
+//   create:         const { data } = await apiClient.post<Wallet>("/wallets", payload);
+//   update:         const { data } = await apiClient.patch<Wallet>(`/wallets/${id}`, payload);
+//   delete:         await apiClient.delete(`/wallets/${id}`);
+//
+// Note: adjustBalance is not a separate backend call — wallet balances are updated
+// automatically when a transaction is created. Remove this method when migrating.
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Mutable in-memory store — mirrors the real API behaviour during development
 let store: Wallet[] = [...mockWallets];
 

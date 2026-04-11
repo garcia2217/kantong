@@ -4,6 +4,20 @@ import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+// ─── Migration reference ──────────────────────────────────────────────────────
+// Replace each mock below with the corresponding apiClient call.
+// The response interceptor unwraps the envelope — callers receive T directly.
+//
+//   getAll:         const { data } = await apiClient.get<Debt[]>("/debts");
+//   getByType:      const { data } = await apiClient.get<Debt[]>("/debts", { params: { type } });
+//   getByPerson:    const { data } = await apiClient.get<Debt[]>("/debts", { params: { person_id } });
+//   create:         const { data } = await apiClient.post<Debt>("/debts", payload);
+//   update:         const { data } = await apiClient.patch<Debt>(`/debts/${id}`, payload);
+//   delete:         await apiClient.delete(`/debts/${id}`);
+//   getNetPosition: const { data } = await apiClient.get<{ totalReceivable: number; totalPayable: number }>(
+//                     "/debts/net-position");
+// ─────────────────────────────────────────────────────────────────────────────
+
 let store: Debt[] = [...mockDebts];
 
 /** Derives the correct status from settled vs total amounts. */

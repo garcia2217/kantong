@@ -4,6 +4,18 @@ import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+// ─── Migration reference ──────────────────────────────────────────────────────
+// Replace each mock below with the corresponding apiClient call.
+// The response interceptor unwraps the envelope — callers receive T directly.
+//
+//   getAll:      const { data } = await apiClient.get<Budget[]>("/budgets");
+//   getDefaults: const { data } = await apiClient.get<Budget[]>("/budgets", { params: { defaults: true } });
+//   getForMonth: const { data } = await apiClient.get<Budget[]>("/budgets/effective", { params: { year, month } });
+//   create:      const { data } = await apiClient.post<Budget>("/budgets", payload);
+//   update:      const { data } = await apiClient.patch<Budget>(`/budgets/${id}`, payload);
+//   delete:      await apiClient.delete(`/budgets/${id}`);
+// ─────────────────────────────────────────────────────────────────────────────
+
 let store: Budget[] = [...mockBudgets];
 
 export const budgetService = {
