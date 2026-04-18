@@ -26,15 +26,20 @@ export default function DashboardLayout({
 
     const router = useRouter();
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const checkAuth = useAuthStore((s) => s.checkAuth);
+    const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
-        if (!isAuthenticated) {
+        checkAuth().finally(() => setIsChecking(false));
+    }, [checkAuth]);
+
+    useEffect(() => {
+        if (!isChecking && !isAuthenticated) {
             router.replace("/login");
         }
-    }, [isAuthenticated, router]);
+    }, [isChecking, isAuthenticated, router]);
 
-    // Prevent rendering dashboard content before redirect completes
-    if (!isAuthenticated) return null;
+    if (isChecking) return null;
 
     return (
         <QueryClientProvider client={queryClient}>
