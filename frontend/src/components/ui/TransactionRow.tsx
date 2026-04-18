@@ -4,25 +4,34 @@ import { formatIDR, formatTime } from "@/src/lib/utils/format";
 // ─── Category emoji mapping ───────────────────────────────────────────────────
 
 export const CATEGORY_EMOJI: Record<string, string> = {
-  Housing: "🏠",
-  Utilities: "💡",
-  Groceries: "🛒",
-  Transport: "🚗",
-  Entertainment: "🎬",
-  Health: "💊",
-  Travel: "✈️",
-  Subscriptions: "📱",
-  "Debt Repayment": "💳",
+  // --- Essential Living ---
+  Housing: "🏡",
+  Utilities: "⚡",
+  Groceries: "🧺",
+  Transport: "🛞",
+
+  // --- Lifestyle ---
+  "Dining Out": "🍱",
+  Entertainment: "🍿",
+  Shopping: "✨",
+  Health: "🌿",
+  Travel: "🌴",
+
+  // --- Financial & Obligations ---
+  Subscriptions: "🔁",
+  "Debt Repayment": "📉",
   Insurance: "🛡️",
-  Salary: "💼",
-  "Side Hustle": "💻",
-  Investments: "📈",
-  Savings: "🏦",
-  Gifts: "🎁",
-  Fees: "🧾",
+
+  // --- Income & Savings ---
+  Salary: "💰",
+  "Side Hustle": "🚀",
+  Investments: "💎",
+  Savings: "🍯",
+  Gifts: "🎈",
+
+  // --- Miscellaneous ---
+  Fees: "💸",
   Other: "📦",
-  Shopping: "🛍️",
-  "Dining Out": "🍽️",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
