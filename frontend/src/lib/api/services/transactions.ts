@@ -1,34 +1,15 @@
 import type { Transaction, TransactionCreate, TransactionUpdate } from "@/src/types";
 import { mockTransactions } from "@/src/lib/mock/mock-transactions";
-import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
+import { apiClient } from "@/src/lib/api/client";
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-// ─── Migration reference ──────────────────────────────────────────────────────
-// Replace each mock below with the corresponding apiClient call.
-// The response interceptor unwraps the envelope — callers receive T directly.
-//
-//   getAll:           const { data } = await apiClient.get<Transaction[]>("/transactions");
-//   getByWallet:      const { data } = await apiClient.get<Transaction[]>("/transactions", { params: { wallet_id } });
-//   getByMonth:       const { data } = await apiClient.get<Transaction[]>("/transactions", { params: { year, month } });
-//   getRecent:        const { data } = await apiClient.get<Transaction[]>("/transactions/recent", { params: { limit } });
-//   create:           const { data } = await apiClient.post<Transaction>("/transactions", payload);
-//   update:           const { data } = await apiClient.patch<Transaction>(`/transactions/${id}`, payload);
-//   delete:           await apiClient.delete(`/transactions/${id}`);
-//   getMonthlySummary: const { data } = await apiClient.get<{ totalIncome: number; totalExpense: number }>(
-//                       "/transactions/summary", { params: { year, month } });
-// ─────────────────────────────────────────────────────────────────────────────
 
 let store: Transaction[] = [...mockTransactions];
 
 export const transactionService = {
   getAll: async (): Promise<Transaction[]> => {
-    await delay(350);
-    return [...store].sort(
-      (a, b) =>
-        new Date(b.transaction_date).getTime() -
-        new Date(a.transaction_date).getTime(),
-    );
+    const { data } = await apiClient.get<Transaction[]>("/transactions");
+    return data;
   },
 
   getByWallet: async (walletId: string): Promise<Transaction[]> => {
@@ -71,21 +52,8 @@ export const transactionService = {
   },
 
   create: async (payload: TransactionCreate): Promise<Transaction> => {
-    await delay(450);
-    const created: Transaction = {
-      id: `tx-${Date.now()}`,
-      user_id: MOCK_USER_ID,
-      wallet_id: payload.wallet_id,
-      category_id: payload.category_id ?? null,
-      amount: payload.amount,
-      type: payload.type,
-      description: payload.description,
-      destination_wallet_id: payload.destination_wallet_id ?? null,
-      transaction_date: payload.transaction_date,
-      created_at: new Date().toISOString(),
-    };
-    store = [created, ...store];
-    return { ...created };
+    const { data } = await apiClient.post<Transaction>("/transactions", payload);
+    return data;
   },
 
   update: async (id: string, payload: TransactionUpdate): Promise<Transaction> => {
