@@ -5,8 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { transactionSchema } from "@/src/lib/validations/transaction";
 import { transactionService } from "@/src/lib/api/services/transactions";
-import { walletService } from "@/src/lib/api/services/wallets";
 import { categoryService } from "@/src/lib/api/services/categories";
+import { walletService } from "@/src/lib/api/services/wallets";
 import { TRANSACTION_KEYS, WALLET_KEYS, CATEGORY_KEYS } from "@/src/lib/api/keys";
 import type { TransactionType } from "@/src/types";
 
@@ -90,19 +90,8 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
   });
 
   const mutation = useMutation({
-    mutationFn: async (payload: Parameters<typeof transactionService.create>[0]) => {
-      const tx = await transactionService.create(payload);
-      // Keep mock wallet balances in sync with transaction amounts
-      if (tx.type === "expense") {
-        await walletService.adjustBalance(tx.wallet_id, -tx.amount);
-      } else if (tx.type === "income") {
-        await walletService.adjustBalance(tx.wallet_id, tx.amount);
-      } else if (tx.type === "transfer" && tx.destination_wallet_id) {
-        await walletService.adjustBalance(tx.wallet_id, -tx.amount);
-        await walletService.adjustBalance(tx.destination_wallet_id, tx.amount);
-      }
-      return tx;
-    },
+    mutationFn: (payload: Parameters<typeof transactionService.create>[0]) =>
+      transactionService.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTION_KEYS.all });
       queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
@@ -154,7 +143,7 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
 
     if (!result.success) {
       const errs: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         const key = String(err.path[0] ?? "");
         if (key && !errs[key]) errs[key] = err.message;
       });
