@@ -1,27 +1,16 @@
 import type { Category, CategoryCreate, CategoryType, CategoryUpdate } from "@/src/types";
 import { mockCategories } from "@/src/lib/mock/mock-data";
 import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
+import { apiClient } from "@/src/lib/api/client";
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-// ─── Migration reference ──────────────────────────────────────────────────────
-// Replace each mock below with the corresponding apiClient call.
-// The response interceptor unwraps the envelope — callers receive T directly.
-//
-//   getAll:     const { data } = await apiClient.get<Category[]>("/categories");
-//   getByType:  const { data } = await apiClient.get<Category[]>("/categories", { params: { type } });
-//   getById:    const { data } = await apiClient.get<Category>(`/categories/${id}`);
-//   create:     const { data } = await apiClient.post<Category>("/categories", payload);
-//   update:     const { data } = await apiClient.patch<Category>(`/categories/${id}`, payload);
-//   delete:     await apiClient.delete(`/categories/${id}`);
-// ─────────────────────────────────────────────────────────────────────────────
 
 let store: Category[] = [...mockCategories];
 
 export const categoryService = {
   getAll: async (): Promise<Category[]> => {
-    await delay(300);
-    return [...store];
+    const { data } = await apiClient.get<Category[]>("/categories");
+    return data;
   },
 
   getByType: async (type: CategoryType): Promise<Category[]> => {
