@@ -6,7 +6,6 @@ import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { budgetSchema } from "@/src/lib/validations/budget";
 import { budgetService } from "@/src/lib/api/services/budgets";
 import { BUDGET_KEYS } from "@/src/lib/api/keys";
-import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
 import type { Budget, Category } from "@/src/types";
 
 interface BudgetSheetProps {
@@ -106,7 +105,6 @@ export function BudgetSheet({
             month: null,
             year: null,
             is_default: true,
-            user_id: MOCK_USER_ID,
           }),
     onSuccess: () => {
       // Invalidating the root key cascades to all byMonth sub-keys
@@ -123,7 +121,7 @@ export function BudgetSheet({
     });
     if (!result.success) {
       const errs: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         const key = String(err.path[0] ?? "");
         if (key && !errs[key]) errs[key] = err.message;
       });

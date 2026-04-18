@@ -71,7 +71,6 @@ export interface BudgetCreate {
   month?: number | null;
   year?: number | null;
   is_default: boolean;
-  user_id: string;
 }
 
 export interface BudgetUpdate {
