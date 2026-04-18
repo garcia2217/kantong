@@ -25,18 +25,8 @@ export const transactionService = {
   },
 
   getByMonth: async (year: number, month: number): Promise<Transaction[]> => {
-    await delay(300);
-    return store
-      .filter((t) => {
-        const d = new Date(t.transaction_date);
-        return d.getFullYear() === year && d.getMonth() + 1 === month;
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.transaction_date).getTime() -
-          new Date(a.transaction_date).getTime(),
-      )
-      .map((t) => ({ ...t }));
+    const { data } = await apiClient.get<Transaction[]>("/transactions", { params: { year, month } });
+    return data;
   },
 
   getRecent: async (limit: number): Promise<Transaction[]> => {
