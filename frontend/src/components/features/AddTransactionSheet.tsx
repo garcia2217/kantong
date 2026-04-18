@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { transactionSchema } from "@/src/lib/validations/transaction";
@@ -13,6 +13,12 @@ import type { TransactionType } from "@/src/types";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const todayIso = () => new Date().toISOString().split("T")[0];
+
+const dateToLocalIso = (dateStr: string): string => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const now = new Date();
+  return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString();
+};
 
 const DEFAULT_FORM = {
   type: "expense" as TransactionType,
@@ -89,23 +95,21 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
     enabled: isOpen,
   });
 
+  const handleClose = () => {
+    setForm({ ...DEFAULT_FORM, transaction_date: todayIso() });
+    setErrors({});
+    onClose();
+  };
+
   const mutation = useMutation({
     mutationFn: (payload: Parameters<typeof transactionService.create>[0]) =>
       transactionService.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTION_KEYS.all });
       queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
-      onClose();
+      handleClose();
     },
   });
-
-  // Reset form when sheet closes
-  useEffect(() => {
-    if (!isOpen) {
-      setForm({ ...DEFAULT_FORM, transaction_date: todayIso() });
-      setErrors({});
-    }
-  }, [isOpen]);
 
   const availableCategories = useMemo(
     () => (categories ?? []).filter((c) => c.type === form.type),
@@ -154,14 +158,14 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
     setErrors({});
     mutation.mutate({
       ...result.data,
-      transaction_date: new Date(result.data.transaction_date).toISOString(),
+      transaction_date: dateToLocalIso(result.data.transaction_date),
     });
   };
 
   const isTransfer = form.type === "transfer";
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Add transaction">
+    <BottomSheet isOpen={isOpen} onClose={handleClose} title="Add transaction">
       <form
         onSubmit={handleSubmit}
         noValidate
