@@ -99,7 +99,6 @@ export interface DebtCreate {
   type: DebtType;
   description?: string;
   due_date?: string;
-  user_id: string;
 }
 
 export interface DebtUpdate {

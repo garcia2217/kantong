@@ -392,6 +392,7 @@ export default function DebtsPage() {
 
   const deleteDebt = useMutation({
     mutationFn: debtService.delete,
+    // TODO: also invalidate DEBT_KEYS.netPosition — stat cards show stale totals after a delete
     onSuccess: () => queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all }),
   });
 

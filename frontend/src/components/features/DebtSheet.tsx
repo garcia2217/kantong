@@ -112,7 +112,6 @@ export function AddDebtSheet({
         amount: data.amount,
         description: data.description || undefined,
         due_date: data.dueDate || undefined,
-        user_id: MOCK_USER_ID,
       });
     },
     onSuccess: () => {
@@ -321,6 +320,7 @@ export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
     mutationFn: ({ id, newSettled }: { id: string; newSettled: number }) =>
       debtService.update(id, { amount_settled: newSettled }),
     onSuccess: () => {
+      // TODO: also invalidate DEBT_KEYS.netPosition — stat cards show stale totals after a settlement
       queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
       onClose();
     },
