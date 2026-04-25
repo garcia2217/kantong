@@ -7,7 +7,6 @@ import { debtSchema, settleSchema } from "@/src/lib/validations/debt";
 import { debtService } from "@/src/lib/api/services/debts";
 import { personService } from "@/src/lib/api/services/persons";
 import { DEBT_KEYS, PERSON_KEYS } from "@/src/lib/api/keys";
-import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
 import { formatIDR, formatDueDate } from "@/src/lib/utils/format";
 import type { Debt, DebtType, Person } from "@/src/types";
 
@@ -102,7 +101,6 @@ export function AddDebtSheet({
       if (data.personId === "__new__" && data.newPersonName.trim()) {
         const created = await personService.create({
           name: data.newPersonName.trim(),
-          user_id: MOCK_USER_ID,
         });
         resolvedPersonId = created.id;
       }

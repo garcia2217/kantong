@@ -84,7 +84,6 @@ export interface BudgetUpdate {
 
 export interface PersonCreate {
   name: string;
-  user_id: string;
 }
 
 export interface PersonUpdate {
