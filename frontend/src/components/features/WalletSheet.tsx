@@ -6,7 +6,6 @@ import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { walletSchema } from "@/src/lib/validations/settings";
 import { walletService } from "@/src/lib/api/services/wallets";
 import { WALLET_KEYS } from "@/src/lib/api/keys";
-import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
 import type { Wallet } from "@/src/types";
 
 interface WalletSheetProps {
@@ -76,7 +75,7 @@ export function WalletSheet({ isOpen, onClose, wallet }: WalletSheetProps) {
     mutationFn: (data: { name: string; balance: number }) =>
       wallet
         ? walletService.update(wallet.id, { name: data.name })
-        : walletService.create({ name: data.name, balance: data.balance, user_id: MOCK_USER_ID }),
+        : walletService.create({ name: data.name, balance: data.balance }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
       onClose();

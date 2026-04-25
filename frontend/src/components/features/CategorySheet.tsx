@@ -6,7 +6,6 @@ import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { categorySchema } from "@/src/lib/validations/settings";
 import { categoryService } from "@/src/lib/api/services/categories";
 import { CATEGORY_KEYS } from "@/src/lib/api/keys";
-import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
 import type { Category, CategoryType } from "@/src/types";
 
 interface CategorySheetProps {
@@ -82,7 +81,7 @@ export function CategorySheet({
     mutationFn: (data: { name: string; type: CategoryType }) =>
       category
         ? categoryService.update(category.id, { name: data.name })
-        : categoryService.create({ name: data.name, type: data.type, user_id: MOCK_USER_ID }),
+        : categoryService.create({ name: data.name, type: data.type }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CATEGORY_KEYS.all });
       onClose();

@@ -19,7 +19,6 @@ export interface UserUpdate {
 
 export interface WalletCreate {
   name: string;
-  user_id: string;
   balance: number;
 }
 
@@ -33,7 +32,6 @@ export interface WalletUpdate {
 export interface CategoryCreate {
   name: string;
   type: CategoryType;
-  user_id: string;
 }
 
 export interface CategoryUpdate {
