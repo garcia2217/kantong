@@ -1,6 +1,5 @@
 import type { Wallet, WalletCreate, WalletUpdate } from "@/src/types";
 import { mockWallets } from "@/src/lib/mock/mock-data";
-import { MOCK_USER_ID } from "@/src/lib/mock/mock-user";
 import { apiClient } from "@/src/lib/api/client";
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -21,35 +20,19 @@ export const walletService = {
   },
 
   create: async (payload: WalletCreate): Promise<Wallet> => {
-    await delay(400);
-    const created: Wallet = {
-      id: `wallet-${Date.now()}`,
-      user_id: MOCK_USER_ID,
+    const { data } = await apiClient.post<Wallet>("/wallets", {
       name: payload.name,
       balance: payload.balance,
-      created_at: new Date().toISOString(),
-      updated_at: null,
-    };
-    store = [...store, created];
-    return { ...created };
+    });
+    return data;
   },
 
   update: async (id: string, payload: WalletUpdate): Promise<Wallet> => {
-    await delay(400);
-    const idx = store.findIndex((w) => w.id === id);
-    if (idx === -1) throw new Error(`Wallet ${id} not found`);
-    const updated: Wallet = {
-      ...store[idx],
-      ...payload,
-      updated_at: new Date().toISOString(),
-    };
-    store = store.map((w) => (w.id === id ? updated : w));
-    return { ...updated };
+    const { data } = await apiClient.patch<Wallet>(`/wallets/${id}`, payload);
+    return data;
   },
 
   delete: async (id: string): Promise<void> => {
-    await delay(400);
-    if (!store.find((w) => w.id === id)) throw new Error(`Wallet ${id} not found`);
-    store = store.filter((w) => w.id !== id);
+    await apiClient.delete(`/wallets/${id}`);
   },
 };
