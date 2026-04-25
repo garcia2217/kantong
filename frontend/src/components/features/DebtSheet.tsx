@@ -318,8 +318,8 @@ export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
     mutationFn: ({ id, newSettled }: { id: string; newSettled: number }) =>
       debtService.update(id, { amount_settled: newSettled }),
     onSuccess: () => {
-      // TODO: also invalidate DEBT_KEYS.netPosition — stat cards show stale totals after a settlement
       queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: DEBT_KEYS.netPosition });
       onClose();
     },
   });
