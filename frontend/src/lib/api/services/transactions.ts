@@ -30,15 +30,10 @@ export const transactionService = {
   },
 
   getRecent: async (limit: number): Promise<Transaction[]> => {
-    await delay(300);
-    return [...store]
-      .sort(
-        (a, b) =>
-          new Date(b.transaction_date).getTime() -
-          new Date(a.transaction_date).getTime(),
-      )
-      .slice(0, limit)
-      .map((t) => ({ ...t }));
+    const { data } = await apiClient.get<Transaction[]>("/transactions/recent", {
+      params: { limit },
+    });
+    return data;
   },
 
   create: async (payload: TransactionCreate): Promise<Transaction> => {
@@ -61,22 +56,14 @@ export const transactionService = {
     store = store.filter((t) => t.id !== id);
   },
 
-  /** Returns total income and total expense for a given month. */
   getMonthlySummary: async (
     year: number,
     month: number,
   ): Promise<{ totalIncome: number; totalExpense: number }> => {
-    await delay(300);
-    const txs = store.filter((t) => {
-      const d = new Date(t.transaction_date);
-      return d.getFullYear() === year && d.getMonth() + 1 === month;
-    });
-    const totalIncome = txs
-      .filter((t) => t.type === "income")
-      .reduce((sum, t) => sum + t.amount, 0);
-    const totalExpense = txs
-      .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + t.amount, 0);
-    return { totalIncome, totalExpense };
+    const { data } = await apiClient.get<{ totalIncome: number; totalExpense: number }>(
+      "/transactions/summary",
+      { params: { year, month } },
+    );
+    return data;
   },
 };
