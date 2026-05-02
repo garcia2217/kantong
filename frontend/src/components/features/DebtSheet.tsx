@@ -4,54 +4,15 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { AmountInput } from "@/src/components/ui/AmountInput";
+import { Field, inputBaseStyle } from "@/src/components/ui/Field";
+import { SheetSubmitButton } from "@/src/components/ui/SheetSubmitButton";
 import { debtSchema, settleSchema } from "@/src/lib/validations/debt";
 import { debtService } from "@/src/lib/api/services/debts";
 import { personService } from "@/src/lib/api/services/persons";
 import { DEBT_KEYS, PERSON_KEYS } from "@/src/lib/api/keys";
+import { parseZodErrors } from "@/src/lib/utils/form";
 import { formatIDR, formatDueDate } from "@/src/lib/utils/format";
 import type { Debt, DebtType, Person } from "@/src/types";
-
-// ─── Shared styles ─────────────────────────────────────────────────────────────
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  minHeight: 44,
-  fontSize: 16,
-  padding: "var(--space-2) var(--space-3)",
-  background: "var(--color-bg-subtle)",
-  border: "0.5px solid var(--color-border)",
-  borderRadius: "var(--radius-md)",
-  color: "var(--color-text-primary)",
-  outline: "none",
-};
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-      <label
-        style={{
-          fontSize: "var(--text-sm)",
-          fontWeight: "var(--weight-medium)",
-          color: "var(--color-text-secondary)",
-        }}
-      >
-        {label}
-      </label>
-      {children}
-      {error && (
-        <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>{error}</p>
-      )}
-    </div>
-  );
-}
 
 // ─── Add Debt Sheet ────────────────────────────────────────────────────────────
 
@@ -100,9 +61,7 @@ export function AddDebtSheet({
     }) => {
       let resolvedPersonId = data.personId;
       if (data.personId === "__new__" && data.newPersonName.trim()) {
-        const created = await personService.create({
-          name: data.newPersonName.trim(),
-        });
+        const created = await personService.create({ name: data.newPersonName.trim() });
         resolvedPersonId = created.id;
       }
       return debtService.create({
@@ -135,12 +94,7 @@ export function AddDebtSheet({
     });
 
     if (!result.success) {
-      const errs: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
-        const key = String(err.path[0] ?? "");
-        if (key && !errs[key]) errs[key] = err.message;
-      });
-      setErrors(errs);
+      setErrors(parseZodErrors(result.error));
       return;
     }
     setErrors({});
@@ -155,7 +109,7 @@ export function AddDebtSheet({
   };
 
   const borderFor = (field: string): React.CSSProperties => ({
-    ...inputStyle,
+    ...inputBaseStyle,
     border: `0.5px solid ${errors[field] ? "var(--color-negative)" : "var(--color-border)"}`,
   });
 
@@ -200,9 +154,9 @@ export function AddDebtSheet({
           ))}
         </div>
 
-        {/* Person */}
-        <Field label="Person" error={errors.person_id}>
+        <Field label="Person" htmlFor="debt-person" error={errors.person_id}>
           <select
+            id="debt-person"
             value={personId}
             onChange={(e) => setPersonId(e.target.value)}
             style={borderFor("person_id")}
@@ -218,8 +172,9 @@ export function AddDebtSheet({
         </Field>
 
         {personId === "__new__" && (
-          <Field label="New person's name" error={errors.new_person_name}>
+          <Field label="New person's name" htmlFor="debt-new-person" error={errors.new_person_name}>
             <input
+              id="debt-new-person"
               type="text"
               autoComplete="off"
               placeholder="e.g. Budi"
@@ -230,34 +185,34 @@ export function AddDebtSheet({
           </Field>
         )}
 
-        {/* Amount */}
-        <Field label="Amount (Rp)" error={errors.amount}>
+        <Field label="Amount (Rp)" htmlFor="debt-amount" error={errors.amount}>
           <AmountInput
+            id="debt-amount"
             value={amount}
             onChange={setAmount}
             style={borderFor("amount")}
           />
         </Field>
 
-        {/* Description */}
-        <Field label="Description (optional)" error={errors.description}>
+        <Field label="Description (optional)" htmlFor="debt-description" error={errors.description}>
           <input
+            id="debt-description"
             type="text"
             autoComplete="off"
             placeholder="What was this for?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            style={{ ...inputStyle, border: "0.5px solid var(--color-border)" }}
+            style={{ ...inputBaseStyle, border: "0.5px solid var(--color-border)" }}
           />
         </Field>
 
-        {/* Due date */}
-        <Field label="Due date (optional)" error={errors.due_date}>
+        <Field label="Due date (optional)" htmlFor="debt-due-date" error={errors.due_date}>
           <input
+            id="debt-due-date"
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            style={{ ...inputStyle, border: "0.5px solid var(--color-border)" }}
+            style={{ ...inputBaseStyle, border: "0.5px solid var(--color-border)" }}
           />
         </Field>
 
@@ -267,24 +222,11 @@ export function AddDebtSheet({
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          style={{
-            width: "100%",
-            minHeight: 44,
-            background: "var(--color-accent)",
-            color: "var(--color-accent-fg)",
-            border: "none",
-            borderRadius: "var(--radius-md)",
-            fontSize: "var(--text-base)",
-            fontWeight: "var(--weight-medium)",
-            cursor: mutation.isPending ? "not-allowed" : "pointer",
-            opacity: mutation.isPending ? 0.7 : 1,
-          }}
-        >
-          {mutation.isPending ? "Saving…" : "Add debt"}
-        </button>
+        <SheetSubmitButton
+          isPending={mutation.isPending}
+          label="Add debt"
+          pendingLabel="Saving…"
+        />
       </form>
     </BottomSheet>
   );
@@ -331,18 +273,18 @@ export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
       amount_settled: amount !== "" ? parseFloat(amount) : NaN,
     });
     if (!result.success) {
-      setError(result.error.errors[0]?.message);
+      setError(result.error.issues[0]?.message);
       return;
     }
-    const newSettled = Math.min(
-      debt.amount_settled + result.data.amount_settled,
-      debt.amount,
-    );
     if (result.data.amount_settled > outstanding) {
       setError(`Max settlement is ${formatIDR(outstanding)}`);
       return;
     }
     setError(undefined);
+    const newSettled = Math.min(
+      debt.amount_settled + result.data.amount_settled,
+      debt.amount,
+    );
     mutation.mutate({ id: debt.id, newSettled });
   };
 
@@ -365,12 +307,7 @@ export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
             gap: "var(--space-1)",
           }}
         >
-          <p
-            style={{
-              fontSize: "var(--text-sm)",
-              color: "var(--color-text-secondary)",
-            }}
-          >
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>
             Outstanding
           </p>
           <p
@@ -389,12 +326,13 @@ export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
           )}
         </div>
 
-        <Field label="Amount to settle (Rp)" error={error}>
+        <Field label="Amount to settle (Rp)" htmlFor="settle-amount" error={error}>
           <AmountInput
+            id="settle-amount"
             value={amount}
             onChange={setAmount}
             style={{
-              ...inputStyle,
+              ...inputBaseStyle,
               border: `0.5px solid ${error ? "var(--color-negative)" : "var(--color-border)"}`,
             }}
           />
@@ -406,24 +344,11 @@ export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          style={{
-            width: "100%",
-            minHeight: 44,
-            background: "var(--color-accent)",
-            color: "var(--color-accent-fg)",
-            border: "none",
-            borderRadius: "var(--radius-md)",
-            fontSize: "var(--text-base)",
-            fontWeight: "var(--weight-medium)",
-            cursor: mutation.isPending ? "not-allowed" : "pointer",
-            opacity: mutation.isPending ? 0.7 : 1,
-          }}
-        >
-          {mutation.isPending ? "Recording…" : "Record settlement"}
-        </button>
+        <SheetSubmitButton
+          isPending={mutation.isPending}
+          label="Record settlement"
+          pendingLabel="Recording…"
+        />
       </form>
     </BottomSheet>
   );

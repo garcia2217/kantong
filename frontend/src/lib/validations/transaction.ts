@@ -4,7 +4,7 @@ export const transactionSchema = z
   .object({
     type: z.enum(["income", "expense", "transfer"]),
     amount: z
-      .number({ invalid_type_error: "Enter a valid amount" })
+      .number({ error: "Enter a valid amount" })
       .positive("Amount must be greater than 0"),
     description: z.string().min(1, "Description is required"),
     wallet_id: z.string().min(1, "Please select a wallet"),

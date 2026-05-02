@@ -5,7 +5,7 @@ export const debtSchema = z.object({
   new_person_name: z.string().optional(),
   type: z.enum(["receivable", "payable"] as const),
   amount: z
-    .number({ invalid_type_error: "Enter a valid amount" })
+    .number({ error: "Enter a valid amount" })
     .positive("Amount must be greater than 0"),
   description: z.string().optional(),
   due_date: z.string().optional(),
@@ -16,7 +16,7 @@ export type DebtFormValues = z.infer<typeof debtSchema>;
 /** Schema for recording a partial or full settlement against an existing debt. */
 export const settleSchema = z.object({
   amount_settled: z
-    .number({ invalid_type_error: "Enter a valid amount" })
+    .number({ error: "Enter a valid amount" })
     .positive("Settlement amount must be greater than 0"),
 });
 
