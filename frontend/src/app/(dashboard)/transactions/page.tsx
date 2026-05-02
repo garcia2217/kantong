@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AddTransactionSheet } from "@/src/components/features/AddTransactionSheet";
+import { EditTransactionSheet } from "@/src/components/features/EditTransactionSheet";
 import { useQuery } from "@tanstack/react-query";
 import { TransactionRow } from "@/src/components/ui/TransactionRow";
 import { transactionService } from "@/src/lib/api/services/transactions";
@@ -53,6 +54,7 @@ function SkeletonRows() {
 
 export default function TransactionsPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   const { data: transactions, isLoading: loadingTx } = useQuery({
     queryKey: TRANSACTION_KEYS.all,
@@ -141,6 +143,13 @@ export default function TransactionsPage() {
       {/* Add transaction sheet */}
       <AddTransactionSheet isOpen={sheetOpen} onClose={() => setSheetOpen(false)} />
 
+      {/* Edit transaction sheet */}
+      <EditTransactionSheet
+        tx={selectedTx}
+        isOpen={selectedTx !== null}
+        onClose={() => setSelectedTx(null)}
+      />
+
       {/* Content */}
       {loadingTx ? (
         <SkeletonRows />
@@ -188,6 +197,7 @@ export default function TransactionsPage() {
                     <TransactionRow
                       tx={tx}
                       category={tx.category_id ? categoryMap[tx.category_id] : undefined}
+                      onClick={() => setSelectedTx(tx)}
                     />
                     {/* Hairline divider between rows, not after the last one */}
                     {idx < group.transactions.length - 1 && (

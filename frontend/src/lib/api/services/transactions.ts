@@ -4,7 +4,7 @@ import { apiClient } from "@/src/lib/api/client";
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-let store: Transaction[] = [...mockTransactions];
+const store: Transaction[] = [...mockTransactions];
 
 export const transactionService = {
   getAll: async (): Promise<Transaction[]> => {
@@ -42,18 +42,12 @@ export const transactionService = {
   },
 
   update: async (id: string, payload: TransactionUpdate): Promise<Transaction> => {
-    await delay(400);
-    const idx = store.findIndex((t) => t.id === id);
-    if (idx === -1) throw new Error(`Transaction ${id} not found`);
-    const updated: Transaction = { ...store[idx], ...payload };
-    store = store.map((t) => (t.id === id ? updated : t));
-    return { ...updated };
+    const { data } = await apiClient.patch<Transaction>(`/transactions/${id}`, payload);
+    return data;
   },
 
   delete: async (id: string): Promise<void> => {
-    await delay(400);
-    if (!store.find((t) => t.id === id)) throw new Error(`Transaction ${id} not found`);
-    store = store.filter((t) => t.id !== id);
+    await apiClient.delete(`/transactions/${id}`);
   },
 
   getMonthlySummary: async (
