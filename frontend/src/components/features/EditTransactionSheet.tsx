@@ -4,20 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { AmountInput } from "@/src/components/ui/AmountInput";
+import { Field, inputBaseStyle } from "@/src/components/ui/Field";
+import { SheetSubmitButton } from "@/src/components/ui/SheetSubmitButton";
 import { transactionSchema } from "@/src/lib/validations/transaction";
 import { transactionService } from "@/src/lib/api/services/transactions";
 import { categoryService } from "@/src/lib/api/services/categories";
 import { walletService } from "@/src/lib/api/services/wallets";
 import { TRANSACTION_KEYS, WALLET_KEYS, CATEGORY_KEYS } from "@/src/lib/api/keys";
+import { parseZodErrors, dateToLocalIso } from "@/src/lib/utils/form";
 import type { Transaction, TransactionType, TransactionUpdate } from "@/src/types";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const dateToLocalIso = (dateStr: string): string => {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const now = new Date();
-  return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString();
-};
 
 const txToFormValues = (tx: Transaction) => ({
   type: tx.type,
@@ -38,45 +33,6 @@ const BLANK_FORM = {
   destination_wallet_id: "",
   transaction_date: "",
 };
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  minHeight: 44,
-  fontSize: 16,
-  padding: "var(--space-2) var(--space-3)",
-  background: "var(--color-bg-subtle)",
-  borderRadius: "var(--radius-md)",
-  color: "var(--color-text-primary)",
-  outline: "none",
-};
-
-// ─── Field ────────────────────────────────────────────────────────────────────
-
-interface FieldProps {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}
-
-function Field({ label, error, children }: FieldProps) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-      <label
-        style={{
-          fontSize: "var(--text-sm)",
-          fontWeight: "var(--weight-medium)",
-          color: "var(--color-text-secondary)",
-        }}
-      >
-        {label}
-      </label>
-      {children}
-      {error && (
-        <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>{error}</p>
-      )}
-    </div>
-  );
-}
 
 // ─── DeleteConfirmation ───────────────────────────────────────────────────────
 
@@ -233,7 +189,7 @@ export function EditTransactionSheet({ tx, isOpen, onClose }: EditTransactionShe
     setForm((f) => ({ ...f, type, category_id: "", destination_wallet_id: "" }));
 
   const borderFor = (field: string): React.CSSProperties => ({
-    ...inputStyle,
+    ...inputBaseStyle,
     border: `0.5px solid ${errors[field] ? "var(--color-negative)" : "var(--color-border)"}`,
   });
 
@@ -250,12 +206,7 @@ export function EditTransactionSheet({ tx, isOpen, onClose }: EditTransactionShe
     });
 
     if (!result.success) {
-      const errs: Record<string, string> = {};
-      result.error.issues.forEach((issue) => {
-        const key = String(issue.path[0] ?? "");
-        if (key && !errs[key]) errs[key] = issue.message;
-      });
-      setErrors(errs);
+      setErrors(parseZodErrors(result.error));
       return;
     }
 
@@ -303,13 +254,10 @@ export function EditTransactionSheet({ tx, isOpen, onClose }: EditTransactionShe
                 padding: "var(--space-2)",
                 borderRadius: "var(--radius-sm)",
                 fontSize: "var(--text-sm)",
-                fontWeight:
-                  form.type === t ? "var(--weight-medium)" : "var(--weight-normal)",
+                fontWeight: form.type === t ? "var(--weight-medium)" : "var(--weight-normal)",
                 background: form.type === t ? "var(--color-accent)" : "transparent",
                 color:
-                  form.type === t
-                    ? "var(--color-accent-fg)"
-                    : "var(--color-text-secondary)",
+                  form.type === t ? "var(--color-accent-fg)" : "var(--color-text-secondary)",
                 border: "none",
                 cursor: "pointer",
                 minHeight: 36,
@@ -321,18 +269,18 @@ export function EditTransactionSheet({ tx, isOpen, onClose }: EditTransactionShe
           ))}
         </div>
 
-        {/* Amount */}
-        <Field label="Amount (Rp)" error={errors.amount}>
+        <Field label="Amount (Rp)" htmlFor="edit-amount" error={errors.amount}>
           <AmountInput
+            id="edit-amount"
             value={form.amount}
             onChange={(raw) => setForm((f) => ({ ...f, amount: raw }))}
             style={borderFor("amount")}
           />
         </Field>
 
-        {/* Description */}
-        <Field label="Description" error={errors.description}>
+        <Field label="Description" htmlFor="edit-description" error={errors.description}>
           <input
+            id="edit-description"
             type="text"
             inputMode="text"
             autoComplete="off"
@@ -343,9 +291,13 @@ export function EditTransactionSheet({ tx, isOpen, onClose }: EditTransactionShe
           />
         </Field>
 
-        {/* Source wallet */}
-        <Field label={isTransfer ? "From wallet" : "Wallet"} error={errors.wallet_id}>
-          <select value={form.wallet_id} onChange={set("wallet_id")} style={borderFor("wallet_id")}>
+        <Field label={isTransfer ? "From wallet" : "Wallet"} htmlFor="edit-wallet" error={errors.wallet_id}>
+          <select
+            id="edit-wallet"
+            value={form.wallet_id}
+            onChange={set("wallet_id")}
+            style={borderFor("wallet_id")}
+          >
             <option value="">Select wallet</option>
             {(wallets ?? []).map((w) => (
               <option key={w.id} value={w.id}>
@@ -355,10 +307,10 @@ export function EditTransactionSheet({ tx, isOpen, onClose }: EditTransactionShe
           </select>
         </Field>
 
-        {/* Destination wallet — transfer only */}
         {isTransfer && (
-          <Field label="To wallet" error={errors.destination_wallet_id}>
+          <Field label="To wallet" htmlFor="edit-dest-wallet" error={errors.destination_wallet_id}>
             <select
+              id="edit-dest-wallet"
               value={form.destination_wallet_id}
               onChange={set("destination_wallet_id")}
               style={borderFor("destination_wallet_id")}
@@ -373,10 +325,10 @@ export function EditTransactionSheet({ tx, isOpen, onClose }: EditTransactionShe
           </Field>
         )}
 
-        {/* Category — income + expense only */}
         {!isTransfer && (
-          <Field label="Category" error={errors.category_id}>
+          <Field label="Category" htmlFor="edit-category" error={errors.category_id}>
             <select
+              id="edit-category"
               value={form.category_id}
               onChange={set("category_id")}
               style={borderFor("category_id")}
@@ -391,9 +343,9 @@ export function EditTransactionSheet({ tx, isOpen, onClose }: EditTransactionShe
           </Field>
         )}
 
-        {/* Date */}
-        <Field label="Date" error={errors.transaction_date}>
+        <Field label="Date" htmlFor="edit-date" error={errors.transaction_date}>
           <input
+            id="edit-date"
             type="date"
             value={form.transaction_date}
             onChange={set("transaction_date")}
@@ -401,34 +353,18 @@ export function EditTransactionSheet({ tx, isOpen, onClose }: EditTransactionShe
           />
         </Field>
 
-        {/* Mutation error */}
         {(updateMutation.isError || deleteMutation.isError) && (
           <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
             Something went wrong. Please try again.
           </p>
         )}
 
-        {/* Save */}
-        <button
-          type="submit"
-          disabled={isBusy}
-          style={{
-            width: "100%",
-            minHeight: 44,
-            background: "var(--color-accent)",
-            color: "var(--color-accent-fg)",
-            border: "none",
-            borderRadius: "var(--radius-md)",
-            fontSize: "var(--text-base)",
-            fontWeight: "var(--weight-medium)",
-            cursor: isBusy ? "not-allowed" : "pointer",
-            opacity: isBusy ? 0.7 : 1,
-          }}
-        >
-          {updateMutation.isPending ? "Saving…" : "Save changes"}
-        </button>
+        <SheetSubmitButton
+          isPending={isBusy}
+          label="Save changes"
+          pendingLabel="Saving…"
+        />
 
-        {/* Delete */}
         {!isConfirmingDelete ? (
           <button
             type="button"
