@@ -71,6 +71,24 @@ function PlusIcon() {
     );
 }
 
+function ChevronDown() {
+    return (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <path d="M3 5l4 4 4-4" />
+        </svg>
+    );
+}
+
 function LogoutIcon() {
     return (
         <svg
@@ -243,6 +261,8 @@ export default function SettingsPage() {
     const [categorySheet, setCategorySheet] = useState<CategorySheetState>({
         open: false,
     });
+    const [walletsOpen, setWalletsOpen] = useState(true);
+    const [categoriesOpen, setCategoriesOpen] = useState(true);
 
     const { data: wallets = [], isLoading: walletsLoading } = useQuery({
         queryKey: WALLET_KEYS.all,
@@ -422,66 +442,90 @@ export default function SettingsPage() {
                             >
                                 Wallets
                             </h2>
-                            <span
+                            <button
+                                onClick={() => setWalletsOpen((o) => !o)}
+                                aria-expanded={walletsOpen}
+                                aria-label={walletsOpen ? "Collapse wallets" : "Expand wallets"}
                                 style={{
-                                    fontSize: "var(--text-sm)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "var(--space-1)",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
                                     color: "var(--color-text-tertiary)",
+                                    fontSize: "var(--text-sm)",
+                                    minHeight: 44,
+                                    padding: "0 var(--space-1)",
                                 }}
                             >
                                 {wallets.length}{" "}
                                 {wallets.length === 1 ? "wallet" : "wallets"}
-                            </span>
+                                <span
+                                    style={{
+                                        display: "inline-flex",
+                                        transition: "transform 0.2s ease",
+                                        transform: walletsOpen ? "rotate(0deg)" : "rotate(-90deg)",
+                                    }}
+                                >
+                                    <ChevronDown />
+                                </span>
+                            </button>
                         </div>
 
-                        {walletsLoading ? (
+                        {walletsOpen && (
                             <>
-                                {skeletonRow}
-                                <div style={dividerStyle} />
-                                {skeletonRow}
-                            </>
-                        ) : wallets.length === 0 ? (
-                            <p
-                                style={{
-                                    padding: "var(--space-6) var(--space-4)",
-                                    textAlign: "center",
-                                    fontSize: "var(--text-sm)",
-                                    color: "var(--color-text-tertiary)",
-                                }}
-                            >
-                                No wallets yet.
-                            </p>
-                        ) : (
-                            wallets.map((wallet, idx) => (
-                                <div key={wallet.id}>
-                                    {idx > 0 && <div style={dividerStyle} />}
-                                    <ItemRow
-                                        primary={wallet.name}
-                                        secondary={formatIDR(wallet.balance)}
-                                        onEdit={() =>
-                                            setWalletSheet({
-                                                open: true,
-                                                wallet,
-                                            })
-                                        }
-                                        onDelete={() =>
-                                            handleDeleteWallet(wallet)
-                                        }
-                                        isDeleting={
-                                            deleteWallet.isPending &&
-                                            deleteWallet.variables === wallet.id
-                                        }
-                                    />
-                                </div>
-                            ))
-                        )}
+                                {walletsLoading ? (
+                                    <>
+                                        {skeletonRow}
+                                        <div style={dividerStyle} />
+                                        {skeletonRow}
+                                    </>
+                                ) : wallets.length === 0 ? (
+                                    <p
+                                        style={{
+                                            padding: "var(--space-6) var(--space-4)",
+                                            textAlign: "center",
+                                            fontSize: "var(--text-sm)",
+                                            color: "var(--color-text-tertiary)",
+                                        }}
+                                    >
+                                        No wallets yet.
+                                    </p>
+                                ) : (
+                                    wallets.map((wallet, idx) => (
+                                        <div key={wallet.id}>
+                                            {idx > 0 && <div style={dividerStyle} />}
+                                            <ItemRow
+                                                primary={wallet.name}
+                                                secondary={formatIDR(wallet.balance)}
+                                                onEdit={() =>
+                                                    setWalletSheet({
+                                                        open: true,
+                                                        wallet,
+                                                    })
+                                                }
+                                                onDelete={() =>
+                                                    handleDeleteWallet(wallet)
+                                                }
+                                                isDeleting={
+                                                    deleteWallet.isPending &&
+                                                    deleteWallet.variables === wallet.id
+                                                }
+                                            />
+                                        </div>
+                                    ))
+                                )}
 
-                        <button
-                            onClick={() => setWalletSheet({ open: true })}
-                            style={addRowStyle}
-                        >
-                            <PlusIcon />
-                            Add wallet
-                        </button>
+                                <button
+                                    onClick={() => setWalletSheet({ open: true })}
+                                    style={addRowStyle}
+                                >
+                                    <PlusIcon />
+                                    Add wallet
+                                </button>
+                            </>
+                        )}
                     </div>
                 </section>
 
@@ -498,146 +542,143 @@ export default function SettingsPage() {
                             >
                                 Categories
                             </h2>
-                            <span
+                            <button
+                                onClick={() => setCategoriesOpen((o) => !o)}
+                                aria-expanded={categoriesOpen}
+                                aria-label={categoriesOpen ? "Collapse categories" : "Expand categories"}
                                 style={{
-                                    fontSize: "var(--text-sm)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "var(--space-1)",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
                                     color: "var(--color-text-tertiary)",
+                                    fontSize: "var(--text-sm)",
+                                    minHeight: 44,
+                                    padding: "0 var(--space-1)",
                                 }}
                             >
                                 {categories.length} total
-                            </span>
-                        </div>
-
-                        {categoriesLoading ? (
-                            <>
-                                {skeletonRow}
-                                <div style={dividerStyle} />
-                                {skeletonRow}
-                            </>
-                        ) : (
-                            <>
-                                {/* Income sub-section */}
-                                <div style={subHeaderStyle}>Income</div>
-                                {incomeCategories.length === 0 ? (
-                                    <p
-                                        style={{
-                                            padding:
-                                                "var(--space-3) var(--space-4)",
-                                            fontSize: "var(--text-sm)",
-                                            color: "var(--color-text-tertiary)",
-                                        }}
-                                    >
-                                        No income categories yet.
-                                    </p>
-                                ) : (
-                                    incomeCategories.map((cat, idx) => (
-                                        <div key={cat.id}>
-                                            {idx > 0 && (
-                                                <div style={dividerStyle} />
-                                            )}
-                                            <ItemRow
-                                                primary={cat.name}
-                                                badge={{
-                                                    label: "income",
-                                                    color: "var(--color-positive)",
-                                                    bg: "var(--color-positive-bg)",
-                                                }}
-                                                onEdit={() =>
-                                                    setCategorySheet({
-                                                        open: true,
-                                                        category: cat,
-                                                    })
-                                                }
-                                                onDelete={() =>
-                                                    handleDeleteCategory(cat)
-                                                }
-                                                isDeleting={
-                                                    deleteCategory.isPending &&
-                                                    deleteCategory.variables ===
-                                                        cat.id
-                                                }
-                                            />
-                                        </div>
-                                    ))
-                                )}
-                                <button
-                                    onClick={() =>
-                                        setCategorySheet({
-                                            open: true,
-                                            defaultType: "income",
-                                        })
-                                    }
-                                    style={addRowStyle}
-                                >
-                                    <PlusIcon />
-                                    Add income category
-                                </button>
-
-                                {/* Expense sub-section */}
-                                <div
+                                <span
                                     style={{
-                                        ...subHeaderStyle,
-                                        borderTop:
-                                            "0.5px solid var(--color-border)",
+                                        display: "inline-flex",
+                                        transition: "transform 0.2s ease",
+                                        transform: categoriesOpen ? "rotate(0deg)" : "rotate(-90deg)",
                                     }}
                                 >
-                                    Expense
-                                </div>
-                                {expenseCategories.length === 0 ? (
-                                    <p
+                                    <ChevronDown />
+                                </span>
+                            </button>
+                        </div>
+
+                        {categoriesOpen && (
+                            categoriesLoading ? (
+                                <>
+                                    {skeletonRow}
+                                    <div style={dividerStyle} />
+                                    {skeletonRow}
+                                </>
+                            ) : (
+                                <>
+                                    {/* Income sub-section */}
+                                    <div style={subHeaderStyle}>Income</div>
+                                    {incomeCategories.length === 0 ? (
+                                        <p
+                                            style={{
+                                                padding: "var(--space-3) var(--space-4)",
+                                                fontSize: "var(--text-sm)",
+                                                color: "var(--color-text-tertiary)",
+                                            }}
+                                        >
+                                            No income categories yet.
+                                        </p>
+                                    ) : (
+                                        incomeCategories.map((cat, idx) => (
+                                            <div key={cat.id}>
+                                                {idx > 0 && <div style={dividerStyle} />}
+                                                <ItemRow
+                                                    primary={cat.name}
+                                                    badge={{
+                                                        label: "income",
+                                                        color: "var(--color-positive)",
+                                                        bg: "var(--color-positive-bg)",
+                                                    }}
+                                                    onEdit={() =>
+                                                        setCategorySheet({ open: true, category: cat })
+                                                    }
+                                                    onDelete={() => handleDeleteCategory(cat)}
+                                                    isDeleting={
+                                                        deleteCategory.isPending &&
+                                                        deleteCategory.variables === cat.id
+                                                    }
+                                                />
+                                            </div>
+                                        ))
+                                    )}
+                                    <button
+                                        onClick={() =>
+                                            setCategorySheet({ open: true, defaultType: "income" })
+                                        }
+                                        style={addRowStyle}
+                                    >
+                                        <PlusIcon />
+                                        Add income category
+                                    </button>
+
+                                    {/* Expense sub-section */}
+                                    <div
                                         style={{
-                                            padding:
-                                                "var(--space-3) var(--space-4)",
-                                            fontSize: "var(--text-sm)",
-                                            color: "var(--color-text-tertiary)",
+                                            ...subHeaderStyle,
+                                            borderTop: "0.5px solid var(--color-border)",
                                         }}
                                     >
-                                        No expense categories yet.
-                                    </p>
-                                ) : (
-                                    expenseCategories.map((cat, idx) => (
-                                        <div key={cat.id}>
-                                            {idx > 0 && (
-                                                <div style={dividerStyle} />
-                                            )}
-                                            <ItemRow
-                                                primary={cat.name}
-                                                badge={{
-                                                    label: "expense",
-                                                    color: "var(--color-text-secondary)",
-                                                    bg: "var(--color-tag-bg)",
-                                                }}
-                                                onEdit={() =>
-                                                    setCategorySheet({
-                                                        open: true,
-                                                        category: cat,
-                                                    })
-                                                }
-                                                onDelete={() =>
-                                                    handleDeleteCategory(cat)
-                                                }
-                                                isDeleting={
-                                                    deleteCategory.isPending &&
-                                                    deleteCategory.variables ===
-                                                        cat.id
-                                                }
-                                            />
-                                        </div>
-                                    ))
-                                )}
-                                <button
-                                    onClick={() =>
-                                        setCategorySheet({
-                                            open: true,
-                                            defaultType: "expense",
-                                        })
-                                    }
-                                    style={addRowStyle}
-                                >
-                                    <PlusIcon />
-                                    Add expense category
-                                </button>
-                            </>
+                                        Expense
+                                    </div>
+                                    {expenseCategories.length === 0 ? (
+                                        <p
+                                            style={{
+                                                padding: "var(--space-3) var(--space-4)",
+                                                fontSize: "var(--text-sm)",
+                                                color: "var(--color-text-tertiary)",
+                                            }}
+                                        >
+                                            No expense categories yet.
+                                        </p>
+                                    ) : (
+                                        expenseCategories.map((cat, idx) => (
+                                            <div key={cat.id}>
+                                                {idx > 0 && <div style={dividerStyle} />}
+                                                <ItemRow
+                                                    primary={cat.name}
+                                                    badge={{
+                                                        label: "expense",
+                                                        color: "var(--color-text-secondary)",
+                                                        bg: "var(--color-tag-bg)",
+                                                    }}
+                                                    onEdit={() =>
+                                                        setCategorySheet({ open: true, category: cat })
+                                                    }
+                                                    onDelete={() => handleDeleteCategory(cat)}
+                                                    isDeleting={
+                                                        deleteCategory.isPending &&
+                                                        deleteCategory.variables === cat.id
+                                                    }
+                                                />
+                                            </div>
+                                        ))
+                                    )}
+                                    <button
+                                        onClick={() =>
+                                            setCategorySheet({ open: true, defaultType: "expense" })
+                                        }
+                                        style={addRowStyle}
+                                    >
+                                        <PlusIcon />
+                                        Add expense category
+                                    </button>
+                                </>
+                            )
                         )}
                     </div>
                 </section>

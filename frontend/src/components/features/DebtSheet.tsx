@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
+import { AmountInput } from "@/src/components/ui/AmountInput";
 import { debtSchema, settleSchema } from "@/src/lib/validations/debt";
 import { debtService } from "@/src/lib/api/services/debts";
 import { personService } from "@/src/lib/api/services/persons";
@@ -231,13 +232,9 @@ export function AddDebtSheet({
 
         {/* Amount */}
         <Field label="Amount (Rp)" error={errors.amount}>
-          <input
-            type="number"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="0"
+          <AmountInput
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={setAmount}
             style={borderFor("amount")}
           />
         </Field>
@@ -393,12 +390,9 @@ export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
         </div>
 
         <Field label="Amount to settle (Rp)" error={error}>
-          <input
-            type="number"
-            inputMode="decimal"
-            autoComplete="off"
+          <AmountInput
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={setAmount}
             style={{
               ...inputStyle,
               border: `0.5px solid ${error ? "var(--color-negative)" : "var(--color-border)"}`,

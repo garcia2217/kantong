@@ -15,7 +15,50 @@ import {
   CATEGORY_KEYS,
   DEBT_KEYS,
 } from "@/src/lib/api/keys";
-import { formatIDRCompact, getCurrentYearMonth } from "@/src/lib/utils/format";
+import { formatIDR, formatIDRCompact, getCurrentYearMonth } from "@/src/lib/utils/format";
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+function WalletIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <rect x="1.5" y="4.5" width="15" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M1.5 8h15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="13.5" cy="11.5" r="1.5" fill="currentColor" opacity="0.75" />
+    </svg>
+  );
+}
+
+function CreditCardIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <rect x="1.5" y="4" width="15" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M1.5 7.5h15" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="3.5" y="10" width="4" height="1.5" rx="0.5" fill="currentColor" opacity="0.7" />
+    </svg>
+  );
+}
+
+function TrendingUpIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <polyline
+        points="2,13 6.5,8.5 10,11 16,5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <polyline
+        points="12.5,5 16,5 16,8.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 // ─── Overview Page ────────────────────────────────────────────────────────────
 
@@ -145,13 +188,14 @@ export default function OverviewPage() {
       >
         <StatCard
           label="Total assets"
-          value={formatIDRCompact(totalAssets)}
+          value={formatIDR(totalAssets)}
           subtext={`${formatIDRCompact(totalWalletBalance)} wallets · ${formatIDRCompact(netPosition?.totalReceivable ?? 0)} receivable`}
           isLoading={isStatsLoading}
+          icon={<WalletIcon />}
         />
         <StatCard
           label="Total liabilities"
-          value={formatIDRCompact(totalLiabilities)}
+          value={formatIDR(totalLiabilities)}
           subtext={
             totalLiabilities > 0
               ? "Outstanding payables"
@@ -159,6 +203,7 @@ export default function OverviewPage() {
           }
           subtextType={totalLiabilities > 0 ? "negative" : "neutral"}
           isLoading={isStatsLoading}
+          icon={<CreditCardIcon />}
         />
         <StatCard
           label="Savings rate"
@@ -172,6 +217,7 @@ export default function OverviewPage() {
             savingsRate !== null && savingsRate >= 20 ? "positive" : "neutral"
           }
           isLoading={isStatsLoading}
+          icon={<TrendingUpIcon />}
         />
       </div>
 

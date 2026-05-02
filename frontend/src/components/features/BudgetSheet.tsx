@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
+import { AmountInput } from "@/src/components/ui/AmountInput";
 import { budgetSchema } from "@/src/lib/validations/budget";
 import { budgetService } from "@/src/lib/api/services/budgets";
 import { BUDGET_KEYS } from "@/src/lib/api/keys";
@@ -179,13 +180,9 @@ export function BudgetSheet({
 
         {/* Amount */}
         <Field label="Monthly budget amount (Rp)" error={errors.amount}>
-          <input
-            type="number"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="0"
+          <AmountInput
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={setAmount}
             style={{
               ...inputStyle,
               border: `0.5px solid ${errors.amount ? "var(--color-negative)" : "var(--color-border)"}`,

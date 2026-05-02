@@ -6,7 +6,7 @@ import { budgetService } from "@/src/lib/api/services/budgets";
 import { categoryService } from "@/src/lib/api/services/categories";
 import { transactionService } from "@/src/lib/api/services/transactions";
 import { BUDGET_KEYS, CATEGORY_KEYS, TRANSACTION_KEYS } from "@/src/lib/api/keys";
-import { formatIDRCompact, formatMonthYear, getCurrentYearMonth } from "@/src/lib/utils/format";
+import { formatIDR, formatIDRCompact, formatMonthYear, getCurrentYearMonth } from "@/src/lib/utils/format";
 import { StatCard } from "@/src/components/ui/StatCard";
 import { BudgetSheet } from "@/src/components/features/BudgetSheet";
 import { CATEGORY_EMOJI } from "@/src/components/ui/TransactionRow";
@@ -50,6 +50,27 @@ const TrashIcon = () => (
 const PlusIcon = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" {...strokeProps}>
     <path d="M7 2V12M2 7H12" />
+  </svg>
+);
+
+const BudgetTotalIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+    <rect x="3" y="2" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M6 6h6M6 9h6M6 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const SpentIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+    <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M6.5 9h5M9.5 6.5L12 9l-2.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const RemainingIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+    <path d="M9 2L16 6v6l-7 4-7-4V6l7-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M6 9l2 2 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -263,20 +284,27 @@ export default function BudgetPage() {
         </div>
 
         {/* Summary stat cards */}
-        <div className="grid grid-cols-3 gap-3">
-          <StatCard label="Total budget" value={formatIDRCompact(totalBudget)} isLoading={isLoading} />
+        <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: "var(--space-3)" }}>
+          <StatCard
+            label="Total budget"
+            value={formatIDR(totalBudget)}
+            isLoading={isLoading}
+            icon={<BudgetTotalIcon />}
+          />
           <StatCard
             label="Spent"
-            value={formatIDRCompact(totalSpent)}
+            value={formatIDR(totalSpent)}
             subtextType={totalSpent > totalBudget && !isLoading ? "negative" : "neutral"}
             isLoading={isLoading}
+            icon={<SpentIcon />}
           />
           <StatCard
             label="Remaining"
-            value={formatIDRCompact(Math.abs(remaining))}
+            value={formatIDR(Math.abs(remaining))}
             subtext={remaining < 0 && !isLoading ? "over budget" : undefined}
             subtextType={remaining < 0 ? "negative" : "positive"}
             isLoading={isLoading}
+            icon={<RemainingIcon />}
           />
         </div>
 

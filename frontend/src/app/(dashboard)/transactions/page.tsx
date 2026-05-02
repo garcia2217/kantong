@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { AddTransactionSheet } from "@/src/components/features/AddTransactionSheet";
 import { EditTransactionSheet } from "@/src/components/features/EditTransactionSheet";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TransactionRow } from "@/src/components/ui/TransactionRow";
 import { transactionService } from "@/src/lib/api/services/transactions";
 import { categoryService } from "@/src/lib/api/services/categories";
@@ -55,6 +55,15 @@ function SkeletonRows() {
 export default function TransactionsPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => transactionService.delete(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: TRANSACTION_KEYS.all });
+    },
+  });
 
   const { data: transactions, isLoading: loadingTx } = useQuery({
     queryKey: TRANSACTION_KEYS.all,
@@ -197,7 +206,8 @@ export default function TransactionsPage() {
                     <TransactionRow
                       tx={tx}
                       category={tx.category_id ? categoryMap[tx.category_id] : undefined}
-                      onClick={() => setSelectedTx(tx)}
+                      onEdit={() => setSelectedTx(tx)}
+                      onDelete={() => deleteMutation.mutate(tx.id)}
                     />
                     {/* Hairline divider between rows, not after the last one */}
                     {idx < group.transactions.length - 1 && (

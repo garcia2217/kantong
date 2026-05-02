@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
+import { AmountInput } from "@/src/components/ui/AmountInput";
 import { walletSchema } from "@/src/lib/validations/settings";
 import { walletService } from "@/src/lib/api/services/wallets";
 import { WALLET_KEYS } from "@/src/lib/api/keys";
@@ -131,13 +132,9 @@ export function WalletSheet({ isOpen, onClose, wallet }: WalletSheetProps) {
         {/* Balance only shown when creating a new wallet */}
         {!isEdit && (
           <Field label="Initial balance (Rp)" error={errors.balance}>
-            <input
-              type="number"
-              inputMode="decimal"
-              autoComplete="off"
-              placeholder="0"
+            <AmountInput
               value={balance}
-              onChange={(e) => setBalance(e.target.value)}
+              onChange={setBalance}
               style={borderFor("balance")}
             />
           </Field>

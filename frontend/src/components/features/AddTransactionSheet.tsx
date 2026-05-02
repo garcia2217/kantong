@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
+import { AmountInput } from "@/src/components/ui/AmountInput";
 import { transactionSchema } from "@/src/lib/validations/transaction";
 import { transactionService } from "@/src/lib/api/services/transactions";
 import { categoryService } from "@/src/lib/api/services/categories";
@@ -212,13 +213,9 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
 
         {/* Amount */}
         <Field label="Amount (Rp)" error={errors.amount}>
-          <input
-            type="number"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="0"
+          <AmountInput
             value={form.amount}
-            onChange={set("amount")}
+            onChange={(raw) => setForm((f) => ({ ...f, amount: raw }))}
             style={borderFor("amount")}
           />
         </Field>
