@@ -4,61 +4,22 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { AmountInput } from "@/src/components/ui/AmountInput";
+import { Field, inputBaseStyle } from "@/src/components/ui/Field";
+import { SheetSubmitButton } from "@/src/components/ui/SheetSubmitButton";
 import { budgetSchema } from "@/src/lib/validations/budget";
 import { budgetService } from "@/src/lib/api/services/budgets";
 import { BUDGET_KEYS } from "@/src/lib/api/keys";
+import { parseZodErrors } from "@/src/lib/utils/form";
 import type { Budget, Category } from "@/src/types";
 
 interface BudgetSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  budget?: Budget;         // undefined = add mode
+  budget?: Budget;
   year: number;
   month: number;
   categories: Category[];
-  takenCategoryIds: string[]; // effective budget category IDs for the selected month
-}
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  minHeight: 44,
-  fontSize: 16,
-  padding: "var(--space-2) var(--space-3)",
-  background: "var(--color-bg-subtle)",
-  border: "0.5px solid var(--color-border)",
-  borderRadius: "var(--radius-md)",
-  color: "var(--color-text-primary)",
-  outline: "none",
-};
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-      <label
-        style={{
-          fontSize: "var(--text-sm)",
-          fontWeight: "var(--weight-medium)",
-          color: "var(--color-text-secondary)",
-        }}
-      >
-        {label}
-      </label>
-      {children}
-      {error && (
-        <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
-          {error}
-        </p>
-      )}
-    </div>
-  );
+  takenCategoryIds: string[];
 }
 
 export function BudgetSheet({
@@ -77,7 +38,6 @@ export function BudgetSheet({
   const [amount, setAmount] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Expense categories not yet assigned a budget for this month
   const availableCategories = categories.filter(
     (c) =>
       c.type === "expense" &&
@@ -108,7 +68,6 @@ export function BudgetSheet({
             is_default: true,
           }),
     onSuccess: () => {
-      // Invalidating the root key cascades to all byMonth sub-keys
       queryClient.invalidateQueries({ queryKey: BUDGET_KEYS.all });
       onClose();
     },
@@ -121,16 +80,22 @@ export function BudgetSheet({
       amount: amount !== "" ? parseFloat(amount) : NaN,
     });
     if (!result.success) {
-      const errs: Record<string, string> = {};
-      result.error.issues.forEach((err) => {
-        const key = String(err.path[0] ?? "");
-        if (key && !errs[key]) errs[key] = err.message;
-      });
-      setErrors(errs);
+      setErrors(parseZodErrors(result.error));
       return;
     }
     setErrors({});
     mutation.mutate(result.data);
+  };
+
+  const selectBorderStyle: React.CSSProperties = {
+    ...inputBaseStyle,
+    border: `0.5px solid ${errors.category_id ? "var(--color-negative)" : "var(--color-border)"}`,
+    cursor: "pointer",
+  };
+
+  const amountBorderStyle: React.CSSProperties = {
+    ...inputBaseStyle,
+    border: `0.5px solid ${errors.amount ? "var(--color-negative)" : "var(--color-border)"}`,
   };
 
   return (
@@ -144,29 +109,26 @@ export function BudgetSheet({
         noValidate
         style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}
       >
-        {/* Category */}
-        <Field label="Category" error={errors.category_id}>
+        <Field label="Category" htmlFor="budget-category" error={errors.category_id}>
           {isEdit ? (
             <div
               style={{
-                ...inputStyle,
+                ...inputBaseStyle,
                 display: "flex",
                 alignItems: "center",
                 color: "var(--color-text-primary)",
                 cursor: "default",
+                border: "0.5px solid var(--color-border)",
               }}
             >
               {currentCategory?.name ?? "Unknown category"}
             </div>
           ) : (
             <select
+              id="budget-category"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              style={{
-                ...inputStyle,
-                border: `0.5px solid ${errors.category_id ? "var(--color-negative)" : "var(--color-border)"}`,
-                cursor: "pointer",
-              }}
+              style={selectBorderStyle}
             >
               <option value="">Select a category…</option>
               {availableCategories.map((c) => (
@@ -178,19 +140,15 @@ export function BudgetSheet({
           )}
         </Field>
 
-        {/* Amount */}
-        <Field label="Monthly budget amount (Rp)" error={errors.amount}>
+        <Field label="Monthly budget amount (Rp)" htmlFor="budget-amount" error={errors.amount}>
           <AmountInput
+            id="budget-amount"
             value={amount}
             onChange={setAmount}
-            style={{
-              ...inputStyle,
-              border: `0.5px solid ${errors.amount ? "var(--color-negative)" : "var(--color-border)"}`,
-            }}
+            style={amountBorderStyle}
           />
         </Field>
 
-        {/* Hint when editing a default budget */}
         {isEdit && budget?.is_default && (
           <p
             style={{
@@ -209,24 +167,11 @@ export function BudgetSheet({
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          style={{
-            width: "100%",
-            minHeight: 44,
-            background: "var(--color-accent)",
-            color: "var(--color-accent-fg)",
-            border: "none",
-            borderRadius: "var(--radius-md)",
-            fontSize: "var(--text-base)",
-            fontWeight: "var(--weight-medium)",
-            cursor: mutation.isPending ? "not-allowed" : "pointer",
-            opacity: mutation.isPending ? 0.7 : 1,
-          }}
-        >
-          {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Add budget"}
-        </button>
+        <SheetSubmitButton
+          isPending={mutation.isPending}
+          label={isEdit ? "Save changes" : "Add budget"}
+          pendingLabel="Saving…"
+        />
       </form>
     </BottomSheet>
   );
