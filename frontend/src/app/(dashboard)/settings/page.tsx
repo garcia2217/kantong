@@ -10,6 +10,7 @@ import { WALLET_KEYS, CATEGORY_KEYS } from "@/src/lib/api/keys";
 import { formatIDR } from "@/src/lib/utils/format";
 import { WalletSheet } from "@/src/components/features/WalletSheet";
 import { CategorySheet } from "@/src/components/features/CategorySheet";
+import { TelegramLinkSection } from "@/src/components/features/TelegramLinkSection";
 import type { Wallet, Category, CategoryType } from "@/src/types";
 
 // ─── Icon components ───────────────────────────────────────────────────────────
@@ -640,6 +641,9 @@ export default function SettingsPage() {
                         )}
                     </div>
                 </section>
+
+                {/* ── Telegram section ────────────────────────────────────────── */}
+                <TelegramLinkSection />
 
                 {/* Mobile-only: log out (sidebar is hidden below md) */}
                 <section className="md:hidden" aria-label="Account">
