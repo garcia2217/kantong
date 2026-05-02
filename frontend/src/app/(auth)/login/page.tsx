@@ -1,48 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { loginSchema } from "@/src/lib/validations/auth";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/src/store/auth";
 
-interface FieldErrors {
-  username?: string;
-  password?: string;
-}
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  oauth_failed: "Google sign-in failed. Please try again.",
+  no_user_info: "Could not retrieve your Google profile. Please try again.",
+  invalid_user_info: "Your Google account is missing required information.",
+};
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login, isLoading } = useAuthStore();
+  const { initiateOAuth } = useAuthStore();
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const [serverError, setServerError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const result = loginSchema.safeParse({ username, password });
-    if (!result.success) {
-      const fieldErrors = result.error.flatten().fieldErrors;
-      setErrors({
-        username: fieldErrors.username?.[0],
-        password: fieldErrors.password?.[0],
-      });
-      return;
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("error");
+    if (error) {
+      setOauthError(
+        OAUTH_ERROR_MESSAGES[error] ?? "Authentication failed. Please try again.",
+      );
+      // Remove ?error from the URL so refreshing doesn't re-show the error
+      window.history.replaceState({}, "", "/login");
     }
-
-    setErrors({});
-    setServerError(null);
-    try {
-      await login(result.data.username, result.data.password);
-      router.push("/overview");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Something went wrong. Please try again.";
-      setServerError(message);
-    }
-  };
+  }, []);
 
   return (
     <div
@@ -56,7 +37,6 @@ export default function LoginPage() {
       }}
     >
       <div style={{ width: "100%", maxWidth: 360 }}>
-        {/* App name */}
         <div style={{ marginBottom: "var(--space-8)", textAlign: "center" }}>
           <h1
             style={{
@@ -78,152 +58,38 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          noValidate
+        {oauthError && (
+          <p
+            role="alert"
+            style={{
+              fontSize: "var(--text-sm)",
+              color: "var(--color-negative)",
+              textAlign: "center",
+              marginBottom: "var(--space-4)",
+            }}
+          >
+            {oauthError}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={initiateOAuth}
+          className="btn-primary"
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--space-4)",
+            width: "100%",
+            minHeight: 44,
+            background: "var(--color-accent)",
+            color: "var(--color-accent-fg)",
+            border: "none",
+            borderRadius: "var(--radius-md)",
+            fontSize: "var(--text-base)",
+            fontWeight: "var(--weight-medium)",
+            cursor: "pointer",
           }}
         >
-          {/* Username */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--space-1)",
-            }}
-          >
-            <label
-              htmlFor="username"
-              style={{
-                fontSize: "var(--text-sm)",
-                fontWeight: "var(--weight-medium)",
-                color: "var(--color-text-secondary)",
-              }}
-            >
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-              style={{
-                width: "100%",
-                minHeight: 44,
-                fontSize: 16,
-                padding: "var(--space-2) var(--space-3)",
-                background: "var(--color-bg-subtle)",
-                border: `0.5px solid ${errors.username ? "var(--color-negative)" : "var(--color-border)"}`,
-                borderRadius: "var(--radius-md)",
-                color: "var(--color-text-primary)",
-                outline: "none",
-              }}
-            />
-            {errors.username && (
-              <p
-                style={{
-                  fontSize: "var(--text-sm)",
-                  color: "var(--color-negative)",
-                }}
-              >
-                {errors.username}
-              </p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--space-1)",
-            }}
-          >
-            <label
-              htmlFor="password"
-              style={{
-                fontSize: "var(--text-sm)",
-                fontWeight: "var(--weight-medium)",
-                color: "var(--color-text-secondary)",
-              }}
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              style={{
-                width: "100%",
-                minHeight: 44,
-                fontSize: 16,
-                padding: "var(--space-2) var(--space-3)",
-                background: "var(--color-bg-subtle)",
-                border: `0.5px solid ${errors.password ? "var(--color-negative)" : "var(--color-border)"}`,
-                borderRadius: "var(--radius-md)",
-                color: "var(--color-text-primary)",
-                outline: "none",
-              }}
-            />
-            {errors.password && (
-              <p
-                style={{
-                  fontSize: "var(--text-sm)",
-                  color: "var(--color-negative)",
-                }}
-              >
-                {errors.password}
-              </p>
-            )}
-          </div>
-
-          {/* Server error */}
-          {serverError && (
-            <p
-              role="alert"
-              style={{
-                fontSize: "var(--text-sm)",
-                color: "var(--color-negative)",
-                textAlign: "center",
-              }}
-            >
-              {serverError}
-            </p>
-          )}
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn-primary"
-            style={{
-              width: "100%",
-              minHeight: 44,
-              marginTop: "var(--space-2)",
-              background: "var(--color-accent)",
-              color: "var(--color-accent-fg)",
-              border: "none",
-              borderRadius: "var(--radius-md)",
-              fontSize: "var(--text-base)",
-              fontWeight: "var(--weight-medium)",
-              cursor: isLoading ? "not-allowed" : "pointer",
-              opacity: isLoading ? 0.7 : 1,
-              transition: "opacity 0.15s ease",
-            }}
-          >
-            {isLoading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
-
+          Sign in with Google
+        </button>
       </div>
     </div>
   );
