@@ -5,16 +5,14 @@ import { apiClient } from "@/src/lib/api/client";
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
   checkAuth: () => Promise<void>;
-  login: (username: string, password: string) => Promise<void>;
+  initiateOAuth: () => void;
   logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
   isAuthenticated: false,
-  isLoading: false,
 
   checkAuth: async () => {
     try {
@@ -25,18 +23,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
     }
   },
 
-  login: async (username: string, password: string) => {
-    set({ isLoading: true });
-    try {
-      const { data } = await apiClient.post<{ user: User }>("/auth/login", {
-        username,
-        password,
-      });
-      set({ user: data.user, isAuthenticated: true, isLoading: false });
-    } catch (error) {
-      set({ isLoading: false });
-      throw error;
-    }
+  initiateOAuth: () => {
+    window.location.href = `${process.env.NEXT_PUBLIC_FINANCIAL_TRACKER_API_BASE_URL}/auth/google/login`;
   },
 
   logout: async () => {
