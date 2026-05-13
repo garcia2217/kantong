@@ -1,27 +1,10 @@
 import type { Transaction, TransactionCreate, TransactionUpdate } from "@/src/types";
-import { mockTransactions } from "@/src/lib/mock/mock-transactions";
 import { apiClient } from "@/src/lib/api/client";
-
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-const store: Transaction[] = [...mockTransactions];
 
 export const transactionService = {
   getAll: async (): Promise<Transaction[]> => {
     const { data } = await apiClient.get<Transaction[]>("/transactions");
     return data;
-  },
-
-  getByWallet: async (walletId: string): Promise<Transaction[]> => {
-    await delay(300);
-    return store
-      .filter((t) => t.wallet_id === walletId || t.destination_wallet_id === walletId)
-      .sort(
-        (a, b) =>
-          new Date(b.transaction_date).getTime() -
-          new Date(a.transaction_date).getTime(),
-      )
-      .map((t) => ({ ...t }));
   },
 
   getByMonth: async (year: number, month: number): Promise<Transaction[]> => {

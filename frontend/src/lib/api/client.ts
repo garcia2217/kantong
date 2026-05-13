@@ -2,7 +2,7 @@ import axios from "axios";
 import type { ErrorResponse } from "@/src/types";
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_FINANCIAL_TRACKER_API_BASE_URL ?? "/api",
+  baseURL: process.env.NEXT_PUBLIC_FINANCIAL_TRACKER_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 10_000,
   withCredentials: true,
