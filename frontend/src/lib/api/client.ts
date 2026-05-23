@@ -20,13 +20,16 @@ apiClient.interceptors.response.use(
   },
   async (error: unknown) => {
     if (axios.isAxiosError(error) && error.response) {
-      const isAuthEndpoint = error.config?.url?.startsWith("/auth/");
+      // Exclude auth-init endpoints — their callers handle 401 themselves.
+      const isAuthRelatedEndpoint =
+        error.config?.url?.startsWith("/auth/") ||
+        error.config?.url === "/users/me";
       if (
         error.response.status === 401 &&
-        !isAuthEndpoint &&
+        !isAuthRelatedEndpoint &&
         typeof window !== "undefined"
       ) {
-        window.location.href = "/login";
+        window.dispatchEvent(new CustomEvent("auth:unauthorized"));
       }
 
       // Extract structured message and code from the error envelope when available,

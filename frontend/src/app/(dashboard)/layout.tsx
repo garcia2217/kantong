@@ -17,7 +17,7 @@ export default function DashboardLayout({
             new QueryClient({
                 defaultOptions: {
                     queries: {
-                        staleTime: 5 * 60 * 1000,
+                        staleTime: 60 * 1000,
                         retry: 1,
                     },
                 },
@@ -28,6 +28,15 @@ export default function DashboardLayout({
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const checkAuth = useAuthStore((s) => s.checkAuth);
     const [isChecking, setIsChecking] = useState(true);
+
+    // Handle mid-session 401s emitted by the Axios interceptor.
+    // Registered before checkAuth so the listener is in place for any auth call.
+    // TODO: remove once auth moves to httpOnly cookies + Next.js middleware.
+    useEffect(() => {
+        const handleUnauthorized = () => router.replace("/login");
+        window.addEventListener("auth:unauthorized", handleUnauthorized);
+        return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    }, [router]);
 
     useEffect(() => {
         checkAuth().finally(() => setIsChecking(false));
