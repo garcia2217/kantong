@@ -24,7 +24,9 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   initiateOAuth: () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_FINANCIAL_TRACKER_API_BASE_URL}/auth/google/login`;
+    // Same-origin path so the whole OAuth flow goes through the /api/* proxy
+    // and stays first-party (see next.config.ts / docs/MOBILE_AUTH_FIX.md).
+    window.location.href = "/api/v1/auth/google/login";
   },
 
   logout: async () => {

@@ -1,8 +1,13 @@
 import axios from "axios";
 import type { ErrorResponse } from "@/src/types";
 
+// Same-origin base path. Requests go to the frontend origin and are proxied to
+// the backend by the /api/* rewrite in next.config.ts, keeping the auth cookie
+// first-party. This is environment-independent, so it is a constant, not env.
+const API_BASE_PATH = "/api/v1";
+
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_FINANCIAL_TRACKER_API_BASE_URL,
+  baseURL: API_BASE_PATH,
   headers: { "Content-Type": "application/json" },
   timeout: 10_000,
   withCredentials: true,
