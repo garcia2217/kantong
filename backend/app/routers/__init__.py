@@ -1,0 +1,23 @@
+from .auth import router as auth_router
+from .budgets import router as budgets_router
+from .categories import router as categories_router
+from .debts import router as debts_router
+from .financial_overview import router as financial_overview_router
+from .persons import router as persons_router
+from .telegram import router as telegram_router
+from .transactions import router as transactions_router
+from .users import router as users_router
+from .wallets import router as wallets_router
+
+__all__ = [
+    "auth_router",
+    "budgets_router",
+    "categories_router",
+    "debts_router",
+    "financial_overview_router",
+    "persons_router",
+    "telegram_router",
+    "transactions_router",
+    "users_router",
+    "wallets_router",
+]

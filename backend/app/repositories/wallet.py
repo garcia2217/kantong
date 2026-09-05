@@ -1,0 +1,136 @@
+from uuid import UUID
+from sqlalchemy import func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Sequence
+
+from app.models.transaction import Transaction
+from app.models.wallet import Wallet
+from app.schemas.wallet import WalletCreate, WalletUpdate
+
+# Oldest first. The default wallet is picked by this same order, so listing and
+# defaulting can never disagree.
+_WALLET_ORDER = (Wallet.created_at, Wallet.id)
+
+
+class WalletRepository:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def get_by_id(self, wallet_id: UUID) -> Wallet | None:
+        result = await self.session.execute(select(Wallet).where(Wallet.id == wallet_id))
+        return result.scalars().first()
+
+    async def get_by_id_for_update(self, wallet_id: UUID) -> Wallet | None:
+        """Fetch a wallet with a row-level lock (SELECT ... FOR UPDATE).
+
+        populate_existing forces a refresh from the locked row, so the caller
+        never operates on a stale balance left in the identity map by an earlier
+        read. This is what makes the balance update safe under concurrency.
+        """
+        result = await self.session.execute(
+            select(Wallet)
+            .where(Wallet.id == wallet_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        return result.scalars().first()
+
+    async def get_user_wallets(self, user_id: UUID) -> Sequence[Wallet]:
+        result = await self.session.execute(
+            select(Wallet)
+            .where(Wallet.user_id == user_id)
+            .order_by(*_WALLET_ORDER)
+        )
+        return result.scalars().all()
+
+    async def get_oldest_wallet(self, user_id: UUID) -> Wallet | None:
+        result = await self.session.execute(
+            select(Wallet)
+            .where(Wallet.user_id == user_id)
+            .order_by(*_WALLET_ORDER)
+            .limit(1)
+        )
+        return result.scalars().first()
+
+    async def has_wallets(self, user_id: UUID) -> bool:
+        result = await self.session.execute(
+            select(Wallet.id).where(Wallet.user_id == user_id).limit(1)
+        )
+        return result.scalars().first() is not None
+
+    async def get_user_wallet_by_name(
+        self, user_id: UUID, name: str, exclude_wallet_id: UUID | None = None
+    ) -> Wallet | None:
+        """Look up a wallet by name, matching the case-insensitive uniqueness the DB enforces."""
+        stmt = select(Wallet).where(
+            Wallet.user_id == user_id,
+            func.lower(Wallet.name) == name.lower(),
+        )
+        if exclude_wallet_id is not None:
+            stmt = stmt.where(Wallet.id != exclude_wallet_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
+    async def create(self, wallet_in: WalletCreate) -> Wallet:
+        db_wallet = Wallet(**wallet_in.model_dump(exclude_unset=True))
+        self.session.add(db_wallet)
+        await self.session.commit()
+        await self.session.refresh(db_wallet)
+        return db_wallet
+
+    async def update(self, db_wallet: Wallet, wallet_in: WalletUpdate) -> Wallet:
+        update_data = wallet_in.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(db_wallet, field, value)
+        self.session.add(db_wallet)
+        await self.session.commit()
+        await self.session.refresh(db_wallet)
+        return db_wallet
+
+    async def set_default(self, db_wallet: Wallet) -> Wallet:
+        """Make this the user's only default wallet.
+
+        The clear must reach the database before the set, or the partial unique
+        index sees two defaults; both writes share one transaction so the user
+        is never observable without a default.
+        """
+        if db_wallet.is_default:
+            return db_wallet
+
+        await self.session.execute(
+            update(Wallet)
+            .where(Wallet.user_id == db_wallet.user_id, Wallet.is_default.is_(True))
+            .values(is_default=False)
+        )
+        await self.session.flush()
+
+        db_wallet.is_default = True
+        self.session.add(db_wallet)
+        await self.session.commit()
+        await self.session.refresh(db_wallet)
+        return db_wallet
+
+    async def has_transactions(self, wallet_id: UUID) -> bool:
+        result = await self.session.execute(
+            select(Transaction.id).where(Transaction.wallet_id == wallet_id).limit(1)
+        )
+        return result.scalars().first() is not None
+
+    async def delete(self, db_wallet: Wallet) -> None:
+        """Delete a wallet, promoting the oldest survivor when it was the default.
+
+        Both writes share one transaction, so a user with remaining wallets is
+        never observable without a default.
+        """
+        promote_successor = db_wallet.is_default
+        user_id = db_wallet.user_id
+        await self.session.delete(db_wallet)
+
+        if promote_successor:
+            await self.session.flush()
+            successor = await self.get_oldest_wallet(user_id)
+            if successor:
+                successor.is_default = True
+                self.session.add(successor)
+
+        await self.session.commit()
