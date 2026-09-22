@@ -48,7 +48,25 @@ export default function DashboardLayout({
         }
     }, [isChecking, isAuthenticated, router]);
 
-    if (isChecking) return null;
+    // Never paint protected content before auth is confirmed. The proxy handles
+    // visitors without a cookie; this also covers expired or invalid cookies.
+    if (isChecking || !isAuthenticated) {
+        return (
+            <div
+                role="status"
+                aria-live="polite"
+                className="flex min-h-dvh flex-1 items-center justify-center"
+                style={{ background: "var(--color-bg-subtle)" }}
+            >
+                <span
+                    className="animate-pulse"
+                    style={{ color: "var(--color-text-secondary)" }}
+                >
+                    Checking your session…
+                </span>
+            </div>
+        );
+    }
 
     return (
         <QueryClientProvider client={queryClient}>
