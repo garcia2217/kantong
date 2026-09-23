@@ -8,8 +8,17 @@ export const transactionService = {
   },
 
   getByMonth: async (year: number, month: number): Promise<Transaction[]> => {
-    const { data } = await apiClient.get<Transaction[]>("/transactions", { params: { year, month } });
-    return data;
+    const pageSize = 100;
+    const transactions: Transaction[] = [];
+    let page = 1;
+    while (true) {
+      const { data } = await apiClient.get<Transaction[]>("/transactions", {
+        params: { year, month, page },
+      });
+      transactions.push(...data);
+      if (data.length < pageSize) return transactions;
+      page += 1;
+    }
   },
 
   getRecent: async (limit: number): Promise<Transaction[]> => {

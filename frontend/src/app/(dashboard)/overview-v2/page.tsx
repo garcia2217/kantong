@@ -6,7 +6,8 @@ import { AddTransactionSheet } from "@/src/components/features/AddTransactionShe
 import { CashFlowChart } from "@/src/components/features/CashFlowChart";
 import { SpendingBreakdownChart } from "@/src/components/features/SpendingBreakdownChart";
 import { formatIDR, formatIDRCompact, formatTime } from "@/src/lib/utils/format";
-import { mockDashboardData } from "@/src/lib/mock/mock-dashboard";
+import { useOverviewData } from "@/src/lib/api/useOverviewData";
+import { useAuthStore } from "@/src/store/auth";
 import type { DashboardAttentionTone } from "@/src/lib/mock/mock-dashboard";
 
 const cardStyle: React.CSSProperties = {
@@ -62,11 +63,31 @@ function EyeIcon({ hidden }: { hidden: boolean }) {
   );
 }
 
+function ThemeIcon({ theme }: { theme: "light" | "dark" }) {
+  return theme === "light" ? (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M16.8 12.8A7 7 0 0 1 7.2 3.2a7 7 0 1 0 9.6 9.6Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="3.2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M10 1.8v1.7m0 13v1.7M1.8 10h1.7m13 0h1.7M4.2 4.2l1.2 1.2m9.2 9.2 1.2 1.2m0-11.6-1.2 1.2m-9.2 9.2-1.2 1.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function OverviewV2Page() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [valuesHidden, setValuesHidden] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const data = mockDashboardData;
+  const userName = useAuthStore((state) => state.user?.username) || "there";
+  const { data, isLoading, isError, hasBudget } = useOverviewData(userName);
+  if (isLoading) {
+    return <div className="overview-v2" data-dashboard-theme={theme} role="status" aria-live="polite" style={{ padding: "var(--space-8)", color: "var(--color-text-secondary)" }}>Loading your overview…</div>;
+  }
+  if (isError || !data) {
+    return <div className="overview-v2" data-dashboard-theme={theme} role="alert" style={{ padding: "var(--space-8)", color: "var(--color-negative)" }}>Your overview could not be loaded. Please refresh the page to try again.</div>;
+  }
   const latestCashFlow = data.cashFlow.at(-1);
   const monthlySaved = latestCashFlow
     ? latestCashFlow.income - latestCashFlow.expenses
@@ -88,15 +109,8 @@ export default function OverviewV2Page() {
           gap: "var(--space-6)",
         }}
       >
-        <header
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: "var(--space-4)",
-          }}
-        >
-          <div>
+        <header className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
             <p
               style={{
                 marginBottom: "var(--space-1)",
@@ -134,63 +148,22 @@ export default function OverviewV2Page() {
 
           <button
             type="button"
-            className="btn-primary"
-            onClick={() => setSheetOpen(true)}
+            className="overview-v2-theme-toggle flex shrink-0 items-center justify-center"
+            aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
+            onClick={() => setTheme((current) => current === "light" ? "dark" : "light")}
             style={{
-              minHeight: 44,
-              flexShrink: 0,
-              padding: "0 var(--space-4)",
-              border: "none",
+              width: 44,
+              height: 44,
+              border: "1px solid var(--color-border)",
               borderRadius: "var(--radius-md)",
-              background: "var(--color-accent)",
-              color: "var(--color-accent-fg)",
+              background: "var(--color-bg-elevated)",
+              color: "var(--color-text-secondary)",
               cursor: "pointer",
-              fontSize: "var(--text-sm)",
-              fontWeight: "var(--weight-medium)",
             }}
           >
-            <span aria-hidden="true">＋</span> Add transaction
+            <ThemeIcon theme={theme} />
           </button>
         </header>
-
-        <div
-          role="group"
-          aria-label="Dashboard theme"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            gap: "var(--space-2)",
-          }}
-        >
-          <span style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-sm)" }}>
-            Theme
-          </span>
-          {(["light", "dark"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              className="overview-v2-theme-toggle"
-              aria-pressed={theme === option}
-              onClick={() => setTheme(option)}
-              style={{
-                minWidth: 60,
-                minHeight: 44,
-                padding: "0 var(--space-3)",
-                border: "1px solid var(--color-border-strong)",
-                borderRadius: "var(--radius-md)",
-                background: theme === option ? "var(--color-accent)" : "var(--color-bg-elevated)",
-                color: theme === option ? "var(--color-accent-fg)" : "var(--color-text-primary)",
-                cursor: "pointer",
-                fontSize: "var(--text-sm)",
-                fontWeight: "var(--weight-medium)",
-                textTransform: "capitalize",
-              }}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
 
         <section
           aria-labelledby="available-balance-heading"
@@ -199,79 +172,92 @@ export default function OverviewV2Page() {
             borderBottom: "1px solid var(--color-border)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-            <h2
-              id="available-balance-heading"
-              style={{
-                color: "var(--color-text-secondary)",
-                fontSize: "var(--text-sm)",
-                fontWeight: "var(--weight-medium)",
-              }}
-            >
-              Available balance
-            </h2>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                <h2
+                  id="available-balance-heading"
+                  style={{
+                    color: "var(--color-text-secondary)",
+                    fontSize: "var(--text-sm)",
+                    fontWeight: "var(--weight-medium)",
+                  }}
+                >
+                  Available balance
+                </h2>
+                <button
+                  type="button"
+                  aria-label={valuesHidden ? "Show financial values" : "Hide financial values"}
+                  aria-pressed={valuesHidden}
+                  onClick={() => setValuesHidden((hidden) => !hidden)}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: -10,
+                    marginLeft: -6,
+                    border: 0,
+                    borderRadius: "var(--radius-md)",
+                    background: "transparent",
+                    color: "var(--color-text-secondary)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <EyeIcon hidden={valuesHidden} />
+                </button>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  flexWrap: "wrap",
+                  gap: "var(--space-3)",
+                  marginTop: "var(--space-1)",
+                }}
+              >
+                <p
+                  style={{
+                    color: "var(--color-text-primary)",
+                    fontSize: "clamp(30px, 5vw, 44px)",
+                    fontWeight: "var(--weight-semibold)",
+                    letterSpacing: "-0.04em",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {displayAmount(data.balance.availableBalance)}
+                </p>
+              </div>
+              <p
+                style={{
+                  marginTop: "var(--space-2)",
+                  color: "var(--color-text-secondary)",
+                  fontSize: "var(--text-sm)",
+                }}
+              >
+                Across {data.balance.walletCount} wallets
+              </p>
+            </div>
             <button
               type="button"
-              aria-label={valuesHidden ? "Show financial values" : "Hide financial values"}
-              aria-pressed={valuesHidden}
-              onClick={() => setValuesHidden((hidden) => !hidden)}
+              className="btn-primary w-full shrink-0 sm:w-auto"
+              onClick={() => setSheetOpen(true)}
               style={{
-                width: 44,
-                height: 44,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: -10,
-                marginLeft: -6,
-                border: 0,
+                minHeight: 44,
+                padding: "0 var(--space-4)",
+                border: "none",
                 borderRadius: "var(--radius-md)",
-                background: "transparent",
-                color: "var(--color-text-secondary)",
+                background: "var(--color-accent)",
+                color: "var(--color-accent-fg)",
                 cursor: "pointer",
-              }}
-            >
-              <EyeIcon hidden={valuesHidden} />
-            </button>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              flexWrap: "wrap",
-              gap: "var(--space-3)",
-              marginTop: "var(--space-1)",
-            }}
-          >
-            <p
-              style={{
-                color: "var(--color-text-primary)",
-                fontSize: "clamp(30px, 5vw, 44px)",
-                fontWeight: "var(--weight-semibold)",
-                letterSpacing: "-0.04em",
-                lineHeight: 1.1,
-              }}
-            >
-              {displayAmount(data.balance.availableBalance)}
-            </p>
-            <p
-              style={{
-                color: "var(--color-positive)",
                 fontSize: "var(--text-sm)",
                 fontWeight: "var(--weight-medium)",
               }}
             >
-              ↑ {data.balance.changePercentage}% this month
-            </p>
+              <span aria-hidden="true">＋</span> Add transaction
+            </button>
           </div>
-          <p
-            style={{
-              marginTop: "var(--space-2)",
-              color: "var(--color-text-secondary)",
-              fontSize: "var(--text-sm)",
-            }}
-          >
-            Across {data.balance.walletCount} wallets
-          </p>
         </section>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.85fr)]">
@@ -390,19 +376,20 @@ export default function OverviewV2Page() {
                       fontSize: "var(--text-sm)",
                     }}
                   >
-                    {displayAmount(data.budget.spent, true)} of {displayAmount(data.budget.limit, true)}
+                    {hasBudget ? `${displayAmount(data.budget.spent, true)} of ${displayAmount(data.budget.limit, true)}` : "No budgets set for this month"}
                   </p>
                 </div>
                 <strong style={{ color: "var(--color-text-primary)", fontSize: "var(--text-lg)" }}>
-                  {data.budget.percentageUsed}%
+                  {hasBudget ? `${data.budget.percentageUsed}%` : "—"}
                 </strong>
               </div>
-              <div
+              {hasBudget && <div
                 role="progressbar"
                 aria-label="Monthly budget used"
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-valuenow={data.budget.percentageUsed}
+                aria-valuenow={Math.min(100, data.budget.percentageUsed)}
+                aria-valuetext={`${data.budget.percentageUsed}% used`}
                 style={{
                   height: 8,
                   marginTop: "var(--space-4)",
@@ -416,10 +403,10 @@ export default function OverviewV2Page() {
                     width: `${Math.min(100, data.budget.percentageUsed)}%`,
                     height: "100%",
                     borderRadius: 4,
-                    background: "var(--color-positive)",
+                    background: data.budget.percentageUsed > 100 ? "var(--color-negative)" : "var(--color-positive)",
                   }}
                 />
-              </div>
+              </div>}
               <div
                 style={{
                   display: "flex",
@@ -430,7 +417,7 @@ export default function OverviewV2Page() {
                   fontSize: "var(--text-xs)",
                 }}
               >
-                <span>{displayAmount(data.budget.remaining, true)} remaining</span>
+                <span>{hasBudget ? data.budget.remaining < 0 ? `${displayAmount(-data.budget.remaining, true)} over budget` : `${displayAmount(data.budget.remaining, true)} remaining` : "Start with a category budget"}</span>
                 <Link href="/budget" style={{ color: "inherit", fontWeight: "var(--weight-medium)" }}>
                   View budget
                 </Link>
@@ -451,6 +438,11 @@ export default function OverviewV2Page() {
                 </h2>
               </div>
               <div>
+                {data.attentionItems.length === 0 && (
+                  <p style={{ padding: "var(--space-4) var(--space-5)", color: "var(--color-text-secondary)", fontSize: "var(--text-sm)" }}>
+                    Nothing needs your attention right now.
+                  </p>
+                )}
                 {data.attentionItems.map((item, index) => {
                   const tone = attentionStyles[item.tone];
                   return (
@@ -649,6 +641,11 @@ export default function OverviewV2Page() {
               </Link>
             </div>
             <div>
+              {data.recentTransactions.length === 0 && (
+                <p style={{ padding: "var(--space-4) var(--space-5)", color: "var(--color-text-secondary)", fontSize: "var(--text-sm)" }}>
+                  No transactions yet. Add one to see your activity here.
+                </p>
+              )}
               {data.recentTransactions.map((transaction, index) => (
                 <div
                   key={transaction.id}
@@ -692,7 +689,7 @@ export default function OverviewV2Page() {
                       fontWeight: "var(--weight-semibold)",
                     }}
                   >
-                    {transaction.type === "income" ? "+" : "−"}
+                    {transaction.type === "income" ? "+" : transaction.type === "expense" ? "−" : ""}
                     {displayAmount(transaction.amount, true)}
                   </p>
                 </div>

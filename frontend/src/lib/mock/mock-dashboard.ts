@@ -43,7 +43,7 @@ export interface DashboardRecentTransaction {
   description: string;
   category: string;
   amount: number;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer";
   occurredAt: string;
 }
 

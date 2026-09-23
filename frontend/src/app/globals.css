@@ -126,11 +126,11 @@ html:has(.overview-v2[data-dashboard-theme="light"]) {
   --color-warning-bg: #fff3cd;
   --color-tag-bg: #e8eee7;
   --color-tag-text: #445a4b;
-  --color-accent: #176b50;
+  --color-accent: #2f5a86;
   --color-accent-fg: #ffffff;
   --color-category-food: #b38352;
-  --color-category-transport: #659d7d;
-  --color-category-shopping: #858fc0;
+  --color-category-transport: #6b7a89;
+  --color-category-shopping: #7d5ba6;
 }
 
 html:has(.overview-v2[data-dashboard-theme="dark"]) {
@@ -145,7 +145,7 @@ html:has(.overview-v2[data-dashboard-theme="dark"]) {
   --color-border-strong: #8c9a9f;
   --color-text-primary: #f2f5f2;
   --color-text-secondary: #c7d0d1;
-  --color-text-tertiary: #c7d0d1;
+  --color-text-tertiary: #96a29d;
   --color-positive: #9bcfaf;
   --color-positive-bg: #355446;
   --color-negative: #eaa69b;
@@ -154,11 +154,11 @@ html:has(.overview-v2[data-dashboard-theme="dark"]) {
   --color-warning-bg: #474239;
   --color-tag-bg: #4b565b;
   --color-tag-text: #e0e8e5;
-  --color-accent: #9bcfaf;
-  --color-accent-fg: #2f3439;
+  --color-accent: #8fb8e0;
+  --color-accent-fg: #1a2733;
   --color-category-food: #e0ad74;
-  --color-category-transport: #86c9ae;
-  --color-category-shopping: #b0b8e1;
+  --color-category-transport: #9fb0bd;
+  --color-category-shopping: #c2a3dd;
 }
 
 .overview-v2-theme-toggle:focus-visible {
