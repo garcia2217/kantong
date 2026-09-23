@@ -1,7 +1,8 @@
 from typing import Literal
+from urllib.parse import quote_plus
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from urllib.parse import quote_plus
 
 class Settings(BaseSettings):
     ENVIRONMENT: Literal["local", "production"] = "production"
@@ -14,7 +15,7 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     FRONTEND_URL: str = "http://localhost:3000"
 
