@@ -151,7 +151,7 @@ function OpenBottomSheet({ onClose, title, children }: Omit<BottomSheetProps, "i
             onInputCapture={() => { isDirtyRef.current = true; }}
             onChangeCapture={() => { isDirtyRef.current = true; }}
             onClickCapture={(event) => {
-              if (event.target instanceof Element && event.target.closest('button[type="button"]')) {
+              if (event.target instanceof Element && event.target.closest('button[type="button"]:not([data-sheet-no-dirty])')) {
                 isDirtyRef.current = true;
               }
             }}

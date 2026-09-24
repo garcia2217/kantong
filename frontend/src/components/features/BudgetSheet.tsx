@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { AmountInput } from "@/src/components/ui/AmountInput";
@@ -67,6 +67,16 @@ function OpenBudgetSheet({
     budget?.is_default ? "every" : "month",
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const deleteTriggerRef = useRef<HTMLButtonElement>(null);
+  const keepBudgetRef = useRef<HTMLButtonElement>(null);
+  const wasConfirmingRef = useRef(false);
+
+  useEffect(() => {
+    if (isConfirmingDelete) keepBudgetRef.current?.focus();
+    else if (wasConfirmingRef.current) deleteTriggerRef.current?.focus();
+    wasConfirmingRef.current = isConfirmingDelete;
+  }, [isConfirmingDelete]);
 
   const availableCategories = categories.filter(
     (c) =>
@@ -96,6 +106,15 @@ function OpenBudgetSheet({
       onClose();
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => budgetService.delete(budget!.id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: BUDGET_KEYS.all });
+      onClose();
+    },
+  });
+  const isBusy = mutation.isPending || deleteMutation.isPending;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -229,17 +248,44 @@ function OpenBudgetSheet({
           </p>
         )}
 
-        {mutation.isError && (
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
+        {(mutation.isError || deleteMutation.isError) && (
+          <p role="alert" style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
             Something went wrong. Please try again.
           </p>
         )}
 
-        <SheetSubmitButton
-          isPending={mutation.isPending}
-          label={isEdit && budget?.is_default && scope === "month" ? `Set for ${periodLabel}` : isEdit ? "Save changes" : "Add budget"}
-          pendingLabel="Saving…"
-        />
+        {!isConfirmingDelete && (
+          <SheetSubmitButton
+            isPending={isBusy}
+            label={isEdit && budget?.is_default && scope === "month" ? `Set for ${periodLabel}` : isEdit ? "Save changes" : "Add budget"}
+            pendingLabel="Saving…"
+          />
+        )}
+
+        {budget && (isConfirmingDelete ? (
+          <div role="group" aria-label="Confirm budget deletion" style={{ padding: "var(--space-4)", border: "1px solid var(--color-border-strong)", borderRadius: "var(--radius-md)", background: "var(--color-bg-subtle)" }}>
+            <p style={{ fontSize: "var(--text-base)", fontWeight: "var(--weight-semibold)", color: "var(--color-text-primary)" }}>
+              Delete this budget?
+            </p>
+            <p style={{ marginTop: "var(--space-1)", fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>
+              {budget.is_default
+                ? "This removes the recurring budget from every month."
+                : `This removes the ${periodLabel} amount. A recurring budget may take effect again.`}
+            </p>
+            <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-4)" }}>
+              <button ref={keepBudgetRef} type="button" data-sheet-no-dirty onClick={() => { deleteMutation.reset(); setIsConfirmingDelete(false); }} disabled={isBusy} style={{ flex: 1, minHeight: 44, border: "1px solid var(--color-border-strong)", borderRadius: "var(--radius-md)", background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", cursor: "pointer" }}>
+                Keep budget
+              </button>
+              <button type="button" data-sheet-no-dirty onClick={() => deleteMutation.mutate()} disabled={isBusy} style={{ flex: 1, minHeight: 44, border: "none", borderRadius: "var(--radius-md)", background: "var(--color-negative)", color: "var(--color-accent-fg)", fontWeight: "var(--weight-medium)", cursor: isBusy ? "not-allowed" : "pointer" }}>
+                {deleteMutation.isPending ? "Deleting…" : "Delete budget"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button ref={deleteTriggerRef} type="button" data-sheet-no-dirty onClick={() => setIsConfirmingDelete(true)} disabled={isBusy} style={{ minHeight: 44, border: "1px solid var(--color-border-strong)", borderRadius: "var(--radius-md)", background: "transparent", color: "var(--color-negative)", fontSize: "var(--text-base)", cursor: isBusy ? "not-allowed" : "pointer" }}>
+            Delete budget
+          </button>
+        ))}
       </form>
     </BottomSheet>
   );

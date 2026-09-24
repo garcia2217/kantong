@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { budgetService } from "@/src/lib/api/services/budgets";
 import { categoryService } from "@/src/lib/api/services/categories";
 import { transactionService } from "@/src/lib/api/services/transactions";
@@ -35,31 +35,14 @@ const ChevronRight = () => (
   </svg>
 );
 
-const EditIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" {...strokeProps}>
-    <path d="M9.5 2.5L11.5 4.5L4.5 11.5H2.5V9.5L9.5 2.5Z" />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" {...strokeProps}>
-    <path d="M2 3.5H12M5 3.5V2.5C5 2 5.5 1.5 6 1.5H8C8.5 1.5 9 2 9 2.5V3.5M5.5 6V11M8.5 6V11M2.5 3.5L3 12C3 12.5 3.5 13 4 13H10C10.5 13 11 12.5 11 12L11.5 3.5" />
-  </svg>
-);
-
-const PlusIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" {...strokeProps}>
-    <path d="M7 2V12M2 7H12" />
-  </svg>
-);
-
 // ─── Progress bar ─────────────────────────────────────────────────────────────
 
 function ProgressBar({ pct }: { pct: number }) {
   const barColor =
-    pct > 100 ? "var(--color-negative)" : pct > 80 ? "#F59E0B" : "var(--color-positive)";
+    pct > 100 ? "var(--color-negative)" : pct > 80 ? "var(--color-warning)" : "var(--color-positive)";
   return (
     <div
+      aria-hidden="true"
       style={{
         height: 6,
         background: "var(--color-bg-subtle)",
@@ -69,12 +52,12 @@ function ProgressBar({ pct }: { pct: number }) {
       }}
     >
       <div
+        className="budget-progress-fill"
         style={{
           height: "100%",
           width: `${Math.min(100, pct)}%`,
           background: barColor,
           borderRadius: 3,
-          transition: "width 0.4s ease",
         }}
       />
     </div>
@@ -89,7 +72,6 @@ interface SheetState {
 }
 
 export default function BudgetPage() {
-  const queryClient = useQueryClient();
   const today = getCurrentYearMonth();
   const [year, setYear] = useState(today.year);
   const [month, setMonth] = useState(today.month);
@@ -120,11 +102,6 @@ export default function BudgetPage() {
     queryFn: () => transactionService.getByMonth(year, month),
   });
   const transactions = Array.isArray(transactionsRaw) ? transactionsRaw : [];
-
-  const deleteBudget = useMutation({
-    mutationFn: budgetService.delete,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: BUDGET_KEYS.all }),
-  });
 
   const isLoading = budgetsLoading || categoriesLoading || txLoading;
   const isError = budgetsError || categoriesError || txError;
@@ -158,27 +135,6 @@ export default function BudgetPage() {
   const takenCategoryIds = budgets.map((b) => b.category_id);
   const hasExpenseCategories = categories.some((category) => category.type === "expense");
 
-  const handleDelete = (budget: Budget, categoryName: string) => {
-    const msg = budget.is_default
-      ? `Remove "${categoryName}" budget? This removes the default for all months.`
-      : `Remove "${categoryName}" override for ${formatMonthYear(year, month)}?`;
-    if (window.confirm(msg)) deleteBudget.mutate(budget.id);
-  };
-
-  // Shared style atoms
-  const actionBtn: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 44,
-    minHeight: 44,
-    padding: "var(--space-2)",
-    background: "transparent",
-    border: "none",
-    borderRadius: "var(--radius-sm)",
-    cursor: "pointer",
-  };
-
   const divider: React.CSSProperties = {
     margin: "0 var(--space-4)",
     height: "0.5px",
@@ -186,67 +142,28 @@ export default function BudgetPage() {
   };
 
   return (
-    <>
-      {/* Mobile sticky top bar */}
-      <header
-        className="md:hidden"
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 40,
-          display: "flex",
-          alignItems: "center",
-          height: 56,
-          padding: "0 var(--space-4)",
-          background: "var(--color-bg-base)",
-          borderBottom: "0.5px solid var(--color-border)",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "var(--text-lg)",
-            fontWeight: "var(--weight-semibold)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          Budget
-        </h1>
+    <div className="budget-page">
+      <header className="budget-header">
+        <div>
+          <h1>Budget</h1>
+          <p className="budget-subtitle">Keep each category on track</p>
+        </div>
+        {!isLoading && !isError && hasExpenseCategories && (
+          <button type="button" className="budget-add btn-primary" onClick={() => setSheet({ open: true })} aria-label="Add budget">
+            <span aria-hidden="true">＋</span>
+            <span className="budget-add-label">Add budget</span>
+          </button>
+        )}
       </header>
 
-      <main
-        style={{
-          maxWidth: 640,
-          margin: "0 auto",
-          padding: "var(--space-6) var(--space-4)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--space-6)",
-        }}
-      >
-        {/* Desktop title */}
-        <h1
-          className="hidden md:block"
-          style={{
-            fontSize: "var(--text-2xl)",
-            fontWeight: "var(--weight-semibold)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          Budget
-        </h1>
-
+      <div className="budget-content">
         {/* Month navigation */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
+        <div className="budget-month-nav">
           <button
+            type="button"
+            className="budget-month-button"
             onClick={goToPrevMonth}
             aria-label="Previous month"
-            style={{ ...actionBtn, color: "var(--color-text-secondary)" }}
           >
             <ChevronLeft />
           </button>
@@ -260,9 +177,10 @@ export default function BudgetPage() {
             {formatMonthYear(year, month)}
           </p>
           <button
+            type="button"
+            className="budget-month-button"
             onClick={goToNextMonth}
             aria-label="Next month"
-            style={{ ...actionBtn, color: "var(--color-text-secondary)" }}
           >
             <ChevronRight />
           </button>
@@ -307,7 +225,7 @@ export default function BudgetPage() {
         {!isError && <section>
           <div
             style={{
-              background: "var(--color-bg-card)",
+              background: "var(--color-bg-elevated)",
               border: "0.5px solid var(--color-border)",
               borderRadius: "var(--radius-lg)",
               overflow: "hidden",
@@ -399,136 +317,47 @@ export default function BudgetPage() {
                 )}
               </div>
             ) : (
-              rows.map(({ budget, category, spent }, idx) => {
+              rows.map(({ budget, category, spent }) => {
                 const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
                 const emoji = CATEGORY_EMOJI[category?.name ?? ""] ?? "📦";
                 const isOver = spent > budget.amount;
+                const categoryName = category?.name ?? "Unknown category";
 
                 return (
-                  <div key={budget.id}>
-                    {idx > 0 && <div style={divider} />}
-                    <div style={{ padding: "var(--space-4)" }}>
-                      {/* Name + actions */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginBottom: "var(--space-2)",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "var(--space-2)",
-                            minWidth: 0,
-                          }}
-                        >
-                          <span style={{ flexShrink: 0 }}>{emoji}</span>
-                          <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                            <span
-                              style={{
-                                fontSize: "var(--text-sm)",
-                                fontWeight: "var(--weight-medium)",
-                                color: "var(--color-text-primary)",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {category?.name ?? "Unknown"}
-                            </span>
-                            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-                              {budget.is_default ? "Every month" : `${formatMonthYear(year, month)} only`}
-                            </span>
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", flexShrink: 0 }}>
-                          <button
-                            onClick={() => setSheet({ open: true, budget })}
-                            aria-label={`Edit ${category?.name ?? "budget"} (${budget.is_default ? "every month" : `${formatMonthYear(year, month)} only`})`}
-                            style={{ ...actionBtn, color: "var(--color-text-secondary)" }}
-                          >
-                            <EditIcon />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(budget, category?.name ?? "this budget")}
-                            aria-label={`Delete ${category?.name ?? "budget"}`}
-                            style={{ ...actionBtn, color: "var(--color-negative)" }}
-                          >
-                            <TrashIcon />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Progress bar */}
-                      <ProgressBar pct={pct} />
-
-                      {/* Spent / remaining labels */}
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          marginTop: "var(--space-1)",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "var(--text-xs)",
-                            color: "var(--color-text-tertiary)",
-                          }}
-                        >
-                          {formatIDRCompact(spent)} spent
+                  <button
+                    key={budget.id}
+                    type="button"
+                    className="budget-row"
+                    onClick={() => setSheet({ open: true, budget })}
+                    aria-label={`${categoryName} budget, ${budget.is_default ? "every month" : `${formatMonthYear(year, month)} only`}. ${formatIDR(spent)} spent of ${formatIDR(budget.amount)}. ${isOver ? `${formatIDR(spent - budget.amount)} over` : `${formatIDR(budget.amount - spent)} left`}. View or edit budget`}
+                  >
+                    <span className="budget-row__top">
+                      <span className="budget-row__icon" aria-hidden="true">{emoji}</span>
+                      <span className="budget-row__identity">
+                        <span className="budget-row__name">{categoryName}</span>
+                        <span className="budget-row__scope">
+                          {budget.is_default ? "Every month" : `${formatMonthYear(year, month)} only`}
                         </span>
-                        <span
-                          style={{
-                            fontSize: "var(--text-xs)",
-                            fontWeight: "var(--weight-medium)",
-                            color: isOver
-                              ? "var(--color-negative)"
-                              : "var(--color-text-secondary)",
-                          }}
-                        >
-                          {isOver
-                            ? `+${formatIDRCompact(spent - budget.amount)} over`
-                            : `${formatIDRCompact(budget.amount - spent)} left`}
-                          {" · "}
-                          {Math.round(pct)}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                      </span>
+                      <span className="budget-row__status" style={{ color: isOver ? "var(--color-negative)" : "var(--color-text-secondary)" }}>
+                        {isOver
+                          ? `${formatIDRCompact(spent - budget.amount)} over`
+                          : `${formatIDRCompact(budget.amount - spent)} left`}
+                      </span>
+                      <span className="budget-row__chevron" aria-hidden="true">›</span>
+                    </span>
+                    <ProgressBar pct={pct} />
+                    <span className="budget-row__figures">
+                      <span>{formatIDR(spent)} spent of {formatIDR(budget.amount)}</span>
+                      <span>{Math.round(pct)}%</span>
+                    </span>
+                  </button>
                 );
               })
             )}
-
-            {/* Add budget row */}
-            {rows.length > 0 && <button
-              onClick={() => setSheet({ open: true })}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "var(--space-2)",
-                width: "100%",
-                minHeight: 44,
-                padding: "var(--space-2) var(--space-4)",
-                background: "transparent",
-                border: "none",
-                borderTop: "0.5px solid var(--color-border)",
-                cursor: "pointer",
-                color: "var(--color-accent)",
-                fontSize: "var(--text-sm)",
-                fontWeight: "var(--weight-medium)",
-                textAlign: "left",
-              }}
-            >
-              <PlusIcon />
-              Add budget
-            </button>}
           </div>
         </section>}
-      </main>
+      </div>
 
       <BudgetSheet
         isOpen={sheet.open}
@@ -539,6 +368,6 @@ export default function BudgetPage() {
         categories={categories}
         takenCategoryIds={takenCategoryIds}
       />
-    </>
+    </div>
   );
 }
