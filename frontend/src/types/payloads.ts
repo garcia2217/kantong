@@ -104,3 +104,8 @@ export interface DebtUpdate {
   description?: string;
   due_date?: string | null;
 }
+
+export interface DebtDetailsUpdate {
+  description: string | null;
+  due_date: string | null;
+}

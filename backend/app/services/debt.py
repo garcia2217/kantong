@@ -6,7 +6,7 @@ from app.core.exceptions import BusinessRuleViolationError, ResourceNotFoundErro
 from app.models.debt import Debt
 from app.repositories.debt import DebtRepository
 from app.repositories.person import PersonRepository
-from app.schemas.debt import DebtCreate, DebtCreateRequest, DebtUpdate
+from app.schemas.debt import DebtCreate, DebtCreateRequest, DebtDetailsUpdate, DebtUpdate
 
 
 def _derive_status(amount_settled: float, amount: float) -> str:
@@ -26,6 +26,19 @@ class DebtService:
     async def get_user_debts(self, user_id: UUID) -> Sequence[Debt]:
         return await self.repo.get_user_debts(user_id)
 
+    async def browse_user_debts(
+        self,
+        user_id: UUID,
+        status: str,
+        debt_type: str | None,
+        search: str,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[tuple[Debt, str]], int]:
+        return await self.repo.browse_user_debts(
+            user_id, status, debt_type, search, page, page_size
+        )
+
     async def create_debt(self, user_id: UUID, body: DebtCreateRequest) -> Debt:
         person = await self.person_repo.get_by_id(body.person_id)
         if not person or person.user_id != user_id:
@@ -44,6 +57,17 @@ class DebtService:
 
         status = _derive_status(amount_settled, float(debt.amount))
         return await self.repo.update(debt, DebtUpdate(amount_settled=amount_settled, status=status))
+
+    async def update_debt_details(
+        self, debt_id: UUID, user_id: UUID, body: DebtDetailsUpdate
+    ) -> Debt:
+        debt = await self.repo.get_by_id(debt_id)
+        if not debt or debt.user_id != user_id:
+            raise ResourceNotFoundError(resource="Debt", id=str(debt_id))
+        changes = body.model_dump(exclude_unset=True)
+        if not changes:
+            return debt
+        return await self.repo.update(debt, DebtUpdate(**changes))
 
     async def delete_debt(self, debt_id: UUID, user_id: UUID) -> None:
         debt = await self.repo.get_by_id(debt_id)

@@ -1,9 +1,10 @@
 from uuid import UUID
-from sqlalchemy import and_, case, func, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Sequence
 
 from app.models.debt import Debt
+from app.models.person import Person
 from app.schemas.debt import DebtCreate, DebtUpdate
 
 class DebtRepository:
@@ -19,6 +20,34 @@ class DebtRepository:
             select(Debt).where(Debt.user_id == user_id).order_by(Debt.created_at.desc())
         )
         return result.scalars().all()
+
+    async def browse_user_debts(
+        self,
+        user_id: UUID,
+        status: str,
+        debt_type: str | None,
+        search: str,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[tuple[Debt, str]], int]:
+        filters = [Debt.user_id == user_id, Person.user_id == user_id]
+        filters.append(Debt.status == "settled" if status == "settled" else Debt.status != "settled")
+        if debt_type:
+            filters.append(Debt.type == debt_type)
+        if search:
+            escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            term = f"%{escaped}%"
+            filters.append(or_(Person.name.ilike(term, escape="\\"), Debt.description.ilike(term, escape="\\")))
+
+        base = select(Debt, Person.name).join(Person, Debt.person_id == Person.id).where(*filters)
+        count = select(func.count(Debt.id)).join(Person, Debt.person_id == Person.id).where(*filters)
+        total = (await self.session.execute(count)).scalar_one()
+        if status == "settled":
+            base = base.order_by(Debt.updated_at.desc().nullslast(), Debt.created_at.desc(), Debt.id)
+        else:
+            base = base.order_by(Debt.due_date.asc().nullslast(), Debt.created_at.desc(), Debt.id)
+        result = await self.session.execute(base.offset((page - 1) * page_size).limit(page_size))
+        return list(result.all()), total
 
     async def get_net_position(self, user_id: UUID) -> dict:
         stmt = select(

@@ -813,6 +813,7 @@ body {
 }
 
 .debt-row-amount {
+  display: block;
   margin-top: var(--space-1);
   color: var(--color-text-primary);
   font-size: var(--text-lg);
@@ -823,6 +824,7 @@ body {
 .debt-row-progress,
 .debt-row-description,
 .debt-row-due {
+  display: block;
   margin-top: var(--space-1);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
@@ -831,6 +833,129 @@ body {
 
 .debt-row-due--overdue { color: var(--color-negative); }
 .debt-row-due--soon { color: var(--color-warning); }
+
+.debt-row-view {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.debt-row-direction { color: var(--color-text-secondary); font-size: var(--text-sm); }
+
+.debt-row-open {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.debt-row-open:focus-visible,
+.debt-pagination button:focus-visible,
+.debts-search :is(input, button):focus-visible,
+.debts-history-toggle:focus-visible,
+.debt-detail-edit:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.debts-search label {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.debts-search > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.debts-search input {
+  flex: 1;
+  min-width: 180px;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 16px;
+}
+
+.debts-search button,
+.debt-list-state button,
+.debt-pagination button,
+.debt-detail-edit {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.debts-search button[type="submit"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+}
+
+.debt-list-state { padding: var(--space-4); }
+.debt-list-state p { margin-bottom: var(--space-3); color: var(--color-negative); }
+
+.debt-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.debt-pagination button:disabled { cursor: default; opacity: 0.45; }
+
+.debts-history-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.debts-history > div { margin-top: var(--space-2); }
+
+.debt-detail-content,
+.debt-detail-form { display: flex; flex-direction: column; gap: var(--space-4); }
+.debt-detail-direction { color: var(--color-text-secondary); font-size: var(--text-sm); }
+.debt-detail-balance { color: var(--color-text-primary); font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+.debt-detail-facts { display: flex; flex-direction: column; gap: var(--space-3); }
+.debt-detail-facts div { display: flex; justify-content: space-between; gap: var(--space-4); }
+.debt-detail-facts dt { color: var(--color-text-secondary); }
+.debt-detail-facts dd { max-width: 65%; color: var(--color-text-primary); overflow-wrap: anywhere; text-align: right; }
+.debt-detail-edit { align-self: flex-start; }
+.debt-detail-error { color: var(--color-negative); }
+
+html:has(.debts-page) [role="dialog"] :is(button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
 
 @media (min-width: 640px) {
   .debts-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }

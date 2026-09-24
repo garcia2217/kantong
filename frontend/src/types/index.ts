@@ -10,6 +10,8 @@ export type {
   Budget,
   Person,
   Debt,
+  DebtBrowseItem,
+  DebtBrowsePage,
 } from "./entities";
 
 export type {
@@ -37,4 +39,5 @@ export type {
   PersonUpdate,
   DebtCreate,
   DebtUpdate,
+  DebtDetailsUpdate,
 } from "./payloads";

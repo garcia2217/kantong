@@ -81,3 +81,14 @@ export interface Debt {
   created_at: string;
   updated_at: string | null;
 }
+
+export interface DebtBrowseItem extends Debt {
+  person_name: string;
+}
+
+export interface DebtBrowsePage {
+  items: DebtBrowseItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}

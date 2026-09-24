@@ -24,6 +24,13 @@ class DebtSettleRequest(BaseModel):
 class DebtUpdate(BaseModel):
     amount_settled: Optional[float] = Field(None, ge=0)
     status: Optional[Literal["pending", "partial", "settled"]] = None
+    description: Optional[str] = Field(None, max_length=500)
+    due_date: Optional[datetime] = None
+
+
+class DebtDetailsUpdate(BaseModel):
+    description: Optional[str] = Field(None, max_length=500)
+    due_date: Optional[datetime] = None
 
 class DebtResponse(DebtBase):
     id: UUID

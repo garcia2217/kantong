@@ -42,6 +42,8 @@ export const DEBT_KEYS = {
   netPosition: ["debts", "netPosition"] as const,
   byPerson: (personId: string) => ["debts", "person", personId] as const,
   byType: (type: "receivable" | "payable") => ["debts", type] as const,
+  browse: (status: "active" | "settled", type: "receivable" | "payable" | null, search: string, page: number) =>
+    ["debts", "browse", status, type, search, page] as const,
 };
 
 export const USER_KEYS = {

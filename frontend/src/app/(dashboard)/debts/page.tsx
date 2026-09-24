@@ -7,7 +7,8 @@ import { personService } from "@/src/lib/api/services/persons";
 import { DEBT_KEYS, PERSON_KEYS } from "@/src/lib/api/keys";
 import { formatIDR } from "@/src/lib/utils/format";
 import { AddDebtSheet, SettleSheet } from "@/src/components/features/DebtSheet";
-import type { Debt, DebtType } from "@/src/types";
+import { DebtDetailSheet } from "@/src/components/features/DebtDetailSheet";
+import type { Debt, DebtBrowseItem, DebtBrowsePage, DebtType } from "@/src/types";
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ function calendarDayStamp(value: string): number {
 }
 
 function dueInfo(dueDate: string | null, today: Date) {
-  if (!dueDate) return { rank: 3, day: Infinity, label: "", tone: "" };
+  if (!dueDate) return { label: "", tone: "" };
 
   const day = calendarDayStamp(dueDate);
   const todayDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
@@ -62,8 +63,6 @@ function dueInfo(dueDate: string | null, today: Date) {
   if (daysUntilDue < 0) {
     const daysOverdue = Math.abs(daysUntilDue);
     return {
-      rank: 0,
-      day,
       label: `Overdue by ${daysOverdue} day${daysOverdue === 1 ? "" : "s"} · ${dateLabel}`,
       tone: "overdue",
     };
@@ -74,19 +73,9 @@ function dueInfo(dueDate: string | null, today: Date) {
       : daysUntilDue === 1
         ? "Due tomorrow"
         : `Due in ${daysUntilDue} days`;
-    return { rank: 1, day, label: `${when} · ${dateLabel}`, tone: "soon" };
+    return { label: `${when} · ${dateLabel}`, tone: "soon" };
   }
-  return { rank: 2, day, label: `Due ${dateLabel}`, tone: "" };
-}
-
-function sortByUrgency(debts: Debt[], today: Date): Debt[] {
-  return [...debts].sort((a, b) => {
-    const aDue = a.status === "settled" ? { rank: 4, day: Infinity } : dueInfo(a.due_date, today);
-    const bDue = b.status === "settled" ? { rank: 4, day: Infinity } : dueInfo(b.due_date, today);
-    if (aDue.rank !== bDue.rank) return aDue.rank - bDue.rank;
-    if (aDue.day !== bDue.day) return aDue.day - bDue.day;
-    return b.created_at.localeCompare(a.created_at);
-  });
+  return { label: `Due ${dateLabel}`, tone: "" };
 }
 
 // ─── Status badge ──────────────────────────────────────────────────────────────
@@ -130,17 +119,18 @@ function StatusBadge({ status }: { status: Debt["status"] }) {
 // ─── Debt row ──────────────────────────────────────────────────────────────────
 
 interface DebtRowProps {
-  debt: Debt;
-  personName: string;
+  debt: DebtBrowseItem;
+  onDetails: () => void;
   onSettle: () => void;
   onDelete: () => void;
   isDeleting: boolean;
 }
 
-function DebtRow({ debt, personName, onSettle, onDelete, isDeleting }: DebtRowProps) {
+function DebtRow({ debt, onDetails, onSettle, onDelete, isDeleting }: DebtRowProps) {
   const outstanding = Math.max(0, debt.amount - debt.amount_settled);
   const isSettled = debt.status === "settled";
   const due = !isSettled ? dueInfo(debt.due_date, new Date()) : null;
+  const personName = debt.person_name;
 
   const actionBtn: React.CSSProperties = {
     display: "flex",
@@ -163,13 +153,17 @@ function DebtRow({ debt, personName, onSettle, onDelete, isDeleting }: DebtRowPr
         alignItems: "flex-start",
         gap: "var(--space-3)",
         minHeight: 64,
-        opacity: isSettled ? 0.6 : 1,
       }}
     >
       {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <button
+        type="button"
+        className="debt-row-open"
+        onClick={onDetails}
+        aria-label={`View debt with ${personName}`}
+      >
         {/* Name + badge */}
-        <div
+        <span
           style={{
             display: "flex",
             alignItems: "center",
@@ -190,24 +184,30 @@ function DebtRow({ debt, personName, onSettle, onDelete, isDeleting }: DebtRowPr
           >
             {personName}
           </span>
+          {isSettled && (
+            <span className="debt-row-direction">
+              {debt.type === "receivable" ? "They owed me" : "I owed them"}
+            </span>
+          )}
           <StatusBadge status={debt.status} />
-        </div>
+        </span>
 
-        <p className="debt-row-amount">
+        <span className="debt-row-amount">
           {isSettled ? `${formatIDR(debt.amount)} paid` : `${formatIDR(outstanding)} remaining`}
-        </p>
+        </span>
         {debt.amount_settled > 0 && !isSettled && (
-          <p className="debt-row-progress">
+          <span className="debt-row-progress">
             {formatIDR(debt.amount_settled)} of {formatIDR(debt.amount)} paid
-          </p>
+          </span>
         )}
-        {debt.description && <p className="debt-row-description">{debt.description}</p>}
+        {debt.description && <span className="debt-row-description">{debt.description}</span>}
         {due?.label && (
-          <p className={`debt-row-due${due.tone ? ` debt-row-due--${due.tone}` : ""}`}>
+          <span className={`debt-row-due${due.tone ? ` debt-row-due--${due.tone}` : ""}`}>
             {due.label}
-          </p>
+          </span>
         )}
-      </div>
+        <span className="debt-row-view">View details →</span>
+      </button>
 
       {/* Actions */}
       <div style={{ display: "flex", flexShrink: 0 }}>
@@ -240,12 +240,16 @@ function DebtRow({ debt, personName, onSettle, onDelete, isDeleting }: DebtRowPr
 
 interface SectionCardProps {
   title: string;
-  count: number;
+  pageData: DebtBrowsePage | undefined;
   isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+  onPageChange: (page: number) => void;
+  emptyMessage: string;
   children: React.ReactNode;
 }
 
-function SectionCard({ title, count, isLoading, children }: SectionCardProps) {
+function SectionCard({ title, pageData, isLoading, isError, onRetry, onPageChange, emptyMessage, children }: SectionCardProps) {
   const divider: React.CSSProperties = {
     margin: "0 var(--space-4)",
     height: "0.5px",
@@ -281,7 +285,7 @@ function SectionCard({ title, count, isLoading, children }: SectionCardProps) {
           {title}
         </h2>
         <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-tertiary)" }}>
-          {isLoading ? "…" : `${count} item${count !== 1 ? "s" : ""}`}
+          {isLoading ? "…" : isError && !pageData ? "—" : `${pageData?.total ?? 0} item${pageData?.total !== 1 ? "s" : ""}`}
         </span>
       </div>
 
@@ -317,7 +321,12 @@ function SectionCard({ title, count, isLoading, children }: SectionCardProps) {
             </div>
           </div>
         ))
-      ) : count === 0 ? (
+      ) : isError ? (
+        <div className="debt-list-state" role="alert">
+          <p>Could not load {title.toLowerCase()}.</p>
+          <button type="button" onClick={onRetry}>Try again</button>
+        </div>
+      ) : !pageData?.items.length ? (
         <p
           style={{
             padding: "var(--space-6) var(--space-4)",
@@ -326,10 +335,25 @@ function SectionCard({ title, count, isLoading, children }: SectionCardProps) {
             color: "var(--color-text-tertiary)",
           }}
         >
-          None recorded.
+          {pageData?.total ? "No debts on this page. Go to the previous page." : emptyMessage}
         </p>
       ) : (
         children
+      )}
+      {pageData && (pageData.total > pageData.page_size || pageData.page > 1) && (
+        <div className="debt-pagination">
+          <button type="button" disabled={pageData.page <= 1} onClick={() => onPageChange(pageData.page - 1)}>
+            Previous
+          </button>
+          <span>Page {pageData.page} of {Math.max(1, Math.ceil(pageData.total / pageData.page_size))}</span>
+          <button
+            type="button"
+            disabled={pageData.page >= Math.ceil(pageData.total / pageData.page_size)}
+            onClick={() => onPageChange(pageData.page + 1)}
+          >
+            Next
+          </button>
+        </div>
       )}
     </div>
   );
@@ -350,12 +374,27 @@ export default function DebtsPage() {
     defaultType: "receivable",
   });
   const [settleDebt, setSettleDebt] = useState<Debt | null>(null);
+  const [detailDebt, setDetailDebt] = useState<DebtBrowseItem | null>(null);
+  const [searchDraft, setSearchDraft] = useState("");
+  const [search, setSearch] = useState("");
+  const [receivablePage, setReceivablePage] = useState(1);
+  const [payablePage, setPayablePage] = useState(1);
+  const [settledPage, setSettledPage] = useState(1);
+  const [settledOpen, setSettledOpen] = useState(false);
 
-  const { data: debtsRaw, isLoading: debtsLoading } = useQuery({
-    queryKey: DEBT_KEYS.all,
-    queryFn: debtService.getAll,
+  const receivables = useQuery({
+    queryKey: DEBT_KEYS.browse("active", "receivable", search, receivablePage),
+    queryFn: () => debtService.browse({ status: "active", debtType: "receivable", search, page: receivablePage }),
   });
-  const debts = Array.isArray(debtsRaw) ? debtsRaw : [];
+  const payables = useQuery({
+    queryKey: DEBT_KEYS.browse("active", "payable", search, payablePage),
+    queryFn: () => debtService.browse({ status: "active", debtType: "payable", search, page: payablePage }),
+  });
+  const settled = useQuery({
+    queryKey: DEBT_KEYS.browse("settled", null, search, settledPage),
+    queryFn: () => debtService.browse({ status: "settled", search, page: settledPage }),
+    enabled: settledOpen,
+  });
 
   const {
     data: netPosition,
@@ -367,7 +406,7 @@ export default function DebtsPage() {
     queryFn: debtService.getNetPosition,
   });
 
-  const { data: persons = [], isLoading: personsLoading } = useQuery({
+  const { data: persons = [] } = useQuery({
     queryKey: PERSON_KEYS.all,
     queryFn: personService.getAll,
   });
@@ -375,30 +414,21 @@ export default function DebtsPage() {
   const deleteDebt = useMutation({
     mutationFn: debtService.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: DEBT_KEYS.netPosition });
+      void queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
     },
   });
 
-  const isLoading = debtsLoading || personsLoading;
-  const personMap = new Map(persons.map((p) => [p.id, p.name]));
-
-  const today = new Date();
-  const receivables = sortByUrgency(debts.filter((d) => d.type === "receivable"), today);
-  const payables = sortByUrgency(debts.filter((d) => d.type === "payable"), today);
-
-  const handleDelete = (debt: Debt) => {
-    const name = personMap.get(debt.person_id) ?? "this person";
+  const handleDelete = (debt: DebtBrowseItem) => {
     if (
       window.confirm(
-        `Delete debt with "${name}" for ${formatIDR(debt.amount)}? This cannot be undone.`,
+        `Delete debt with "${debt.person_name}" for ${formatIDR(debt.amount)}? This cannot be undone.`,
       )
     ) {
       deleteDebt.mutate(debt.id);
     }
   };
 
-  const renderRows = (list: Debt[]) => {
+  const renderRows = (list: DebtBrowseItem[]) => {
     const divider: React.CSSProperties = {
       margin: "0 var(--space-4)",
       height: "0.5px",
@@ -409,13 +439,22 @@ export default function DebtsPage() {
         {idx > 0 && <div style={divider} />}
         <DebtRow
           debt={debt}
-          personName={personMap.get(debt.person_id) ?? "Unknown"}
+          onDetails={() => setDetailDebt(debt)}
           onSettle={() => setSettleDebt(debt)}
           onDelete={() => handleDelete(debt)}
           isDeleting={deleteDebt.isPending && deleteDebt.variables === debt.id}
         />
       </div>
     ));
+  };
+
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSearch(searchDraft.trim());
+    setReceivablePage(1);
+    setPayablePage(1);
+    setSettledPage(1);
+    if (searchDraft.trim()) setSettledOpen(true);
   };
 
   return (
@@ -461,13 +500,82 @@ export default function DebtsPage() {
             </p>
           )}
 
-          <SectionCard title="They owe me" count={receivables.length} isLoading={isLoading}>
-            {renderRows(receivables)}
+          <form className="debts-search" role="search" onSubmit={handleSearch}>
+            <label htmlFor="debt-search">Find a debt</label>
+            <div>
+              <input
+                id="debt-search"
+                type="search"
+                value={searchDraft}
+                onChange={(event) => setSearchDraft(event.target.value)}
+                placeholder="Search person or description"
+              />
+              <button type="submit">Search</button>
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchDraft("");
+                    setSearch("");
+                    setReceivablePage(1);
+                    setPayablePage(1);
+                    setSettledPage(1);
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </form>
+
+          <SectionCard
+            title="They owe me"
+            pageData={receivables.data}
+            isLoading={receivables.isLoading}
+            isError={receivables.isError}
+            onRetry={() => void receivables.refetch()}
+            onPageChange={setReceivablePage}
+            emptyMessage={search ? "No matching debts to collect." : "Nobody owes you money yet."}
+          >
+            {renderRows(receivables.data?.items ?? [])}
           </SectionCard>
 
-          <SectionCard title="I owe them" count={payables.length} isLoading={isLoading}>
-            {renderRows(payables)}
+          <SectionCard
+            title="I owe them"
+            pageData={payables.data}
+            isLoading={payables.isLoading}
+            isError={payables.isError}
+            onRetry={() => void payables.refetch()}
+            onPageChange={setPayablePage}
+            emptyMessage={search ? "No matching debts to pay." : "You do not owe anyone money yet."}
+          >
+            {renderRows(payables.data?.items ?? [])}
           </SectionCard>
+
+          <section className="debts-history">
+            <button
+              type="button"
+              className="debts-history-toggle"
+              aria-expanded={settledOpen}
+              onClick={() => setSettledOpen((open) => !open)}
+            >
+              <span>Settled history</span>
+              <span aria-hidden="true">{settledOpen ? "−" : "+"}</span>
+            </button>
+            {settledOpen && (
+              <SectionCard
+                title="Settled history"
+                pageData={settled.data}
+                isLoading={settled.isLoading}
+                isError={settled.isError}
+                onRetry={() => void settled.refetch()}
+                onPageChange={setSettledPage}
+                emptyMessage={search ? "No matching settled debts." : "No settled debts yet."}
+              >
+                {renderRows(settled.data?.items ?? [])}
+              </SectionCard>
+            )}
+          </section>
         </div>
       </div>
 
@@ -484,6 +592,11 @@ export default function DebtsPage() {
         isOpen={!!settleDebt}
         onClose={() => setSettleDebt(null)}
         debt={settleDebt}
+      />
+      <DebtDetailSheet
+        debt={detailDebt}
+        onClose={() => setDetailDebt(null)}
+        onUpdated={setDetailDebt}
       />
     </>
   );

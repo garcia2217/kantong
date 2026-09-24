@@ -1,20 +1,51 @@
 import uuid
+from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
-from app.schemas.debt import DebtCreateRequest, DebtResponse, DebtSettleRequest
+from app.schemas.debt import DebtCreateRequest, DebtDetailsUpdate, DebtResponse, DebtSettleRequest
 from app.schemas.response import build_paginated_response, build_success_response
 from app.services.debt import DebtService
 
 router = APIRouter(prefix="/api/v1/debts", tags=["debts"])
 
 PAGE_SIZE = 100
+
+
+@router.get("/browse")
+async def browse_debts(
+    status: Literal["active", "settled"] = "active",
+    debt_type: Literal["receivable", "payable"] | None = None,
+    search: str = Query(default="", max_length=100),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    service = DebtService(db)
+    rows, total = await service.browse_user_debts(
+        current_user.id, status, debt_type, search.strip(), page, page_size
+    )
+    items = [
+        {
+            **DebtResponse.model_validate(debt).model_dump(mode="json"),
+            "person_name": person_name,
+        }
+        for debt, person_name in rows
+    ]
+    return JSONResponse(
+        status_code=200,
+        content=build_success_response(
+            data={"items": items, "total": total, "page": page, "page_size": page_size},
+            request_id=str(uuid.uuid4()),
+        ),
+    )
 
 
 @router.get("/net-position")
@@ -105,6 +136,24 @@ async def settle_debt(
         content=build_success_response(
             data=DebtResponse.model_validate(debt).model_dump(mode="json"),
             request_id=request_id,
+        ),
+    )
+
+
+@router.patch("/{debt_id}/details")
+async def update_debt_details(
+    debt_id: UUID,
+    body: DebtDetailsUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    service = DebtService(db)
+    debt = await service.update_debt_details(debt_id, current_user.id, body)
+    return JSONResponse(
+        status_code=200,
+        content=build_success_response(
+            data=DebtResponse.model_validate(debt).model_dump(mode="json"),
+            request_id=str(uuid.uuid4()),
         ),
     )
 

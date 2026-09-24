@@ -21,3 +21,8 @@ export const settleSchema = z.object({
 });
 
 export type SettleFormValues = z.infer<typeof settleSchema>;
+
+export const debtDetailsSchema = z.object({
+  description: z.string().max(500, "Description must be 500 characters or fewer"),
+  due_date: z.string(),
+});
