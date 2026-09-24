@@ -233,18 +233,9 @@ interface SectionCardProps {
   count: number;
   isLoading: boolean;
   children: React.ReactNode;
-  onAdd: () => void;
-  addLabel: string;
 }
 
-function SectionCard({
-  title,
-  count,
-  isLoading,
-  children,
-  onAdd,
-  addLabel,
-}: SectionCardProps) {
+function SectionCard({ title, count, isLoading, children }: SectionCardProps) {
   const divider: React.CSSProperties = {
     margin: "0 var(--space-4)",
     height: "0.5px",
@@ -254,7 +245,7 @@ function SectionCard({
   return (
     <div
       style={{
-        background: "var(--color-bg-card)",
+        background: "var(--color-bg-elevated)",
         border: "0.5px solid var(--color-border)",
         borderRadius: "var(--radius-lg)",
         overflow: "hidden",
@@ -330,30 +321,6 @@ function SectionCard({
       ) : (
         children
       )}
-
-      {/* Add row */}
-      <button
-        onClick={onAdd}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "var(--space-2)",
-          width: "100%",
-          minHeight: 44,
-          padding: "var(--space-2) var(--space-4)",
-          background: "transparent",
-          border: "none",
-          borderTop: "0.5px solid var(--color-border)",
-          cursor: "pointer",
-          color: "var(--color-accent)",
-          fontSize: "var(--text-sm)",
-          fontWeight: "var(--weight-medium)",
-          textAlign: "left",
-        }}
-      >
-        <PlusIcon />
-        {addLabel}
-      </button>
     </div>
   );
 }
@@ -437,94 +404,47 @@ export default function DebtsPage() {
 
   return (
     <>
-      {/* Mobile top bar */}
-      <header
-        className="md:hidden"
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 40,
-          display: "flex",
-          alignItems: "center",
-          height: 56,
-          padding: "0 var(--space-4)",
-          background: "var(--color-bg-base)",
-          borderBottom: "0.5px solid var(--color-border)",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "var(--text-lg)",
-            fontWeight: "var(--weight-semibold)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          Debts
-        </h1>
-      </header>
+      <div className="debts-page">
+        <header className="debts-header">
+          <div>
+            <h1>Debts</h1>
+            <p className="debts-subtitle">Keep track of money owed between you and others</p>
+          </div>
+          <button
+            type="button"
+            className="debts-add btn-primary"
+            onClick={() => setAddSheet({ open: true, defaultType: "receivable" })}
+            aria-label="Add debt"
+          >
+            <PlusIcon />
+            <span className="debts-add-label">Add debt</span>
+          </button>
+        </header>
 
-      <main
-        style={{
-          maxWidth: 640,
-          margin: "0 auto",
-          padding: "var(--space-6) var(--space-4)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--space-6)",
-        }}
-      >
-        {/* Desktop title */}
-        <h1
-          className="hidden md:block"
-          style={{
-            fontSize: "var(--text-2xl)",
-            fontWeight: "var(--weight-semibold)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          Debts
-        </h1>
+        <div className="debts-content">
+          {/* Net position stat cards */}
+          <div className="debts-summary grid grid-cols-2 gap-3">
+            <StatCard
+              label="They owe me"
+              value={formatIDRCompact(netPosition?.totalReceivable ?? 0)}
+              isLoading={netLoading}
+            />
+            <StatCard
+              label="I owe them"
+              value={formatIDRCompact(netPosition?.totalPayable ?? 0)}
+              isLoading={netLoading}
+            />
+          </div>
 
-        {/* Net position stat cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard
-            label="Total receivable"
-            value={formatIDRCompact(netPosition?.totalReceivable ?? 0)}
-            subtext="they owe you"
-            subtextType="positive"
-            isLoading={netLoading}
-          />
-          <StatCard
-            label="Total payable"
-            value={formatIDRCompact(netPosition?.totalPayable ?? 0)}
-            subtext="you owe them"
-            subtextType="negative"
-            isLoading={netLoading}
-          />
+          <SectionCard title="They owe me" count={receivables.length} isLoading={isLoading}>
+            {renderRows(receivables)}
+          </SectionCard>
+
+          <SectionCard title="I owe them" count={payables.length} isLoading={isLoading}>
+            {renderRows(payables)}
+          </SectionCard>
         </div>
-
-        {/* Receivables section */}
-        <SectionCard
-          title="Receivables"
-          count={receivables.length}
-          isLoading={isLoading}
-          onAdd={() => setAddSheet({ open: true, defaultType: "receivable" })}
-          addLabel="Add receivable"
-        >
-          {renderRows(receivables)}
-        </SectionCard>
-
-        {/* Payables section */}
-        <SectionCard
-          title="Payables"
-          count={payables.length}
-          isLoading={isLoading}
-          onAdd={() => setAddSheet({ open: true, defaultType: "payable" })}
-          addLabel="Add payable"
-        >
-          {renderRows(payables)}
-        </SectionCard>
-      </main>
+      </div>
 
       {/* Add sheet */}
       <AddDebtSheet
