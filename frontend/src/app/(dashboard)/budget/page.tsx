@@ -424,23 +424,28 @@ export default function BudgetPage() {
                           }}
                         >
                           <span style={{ flexShrink: 0 }}>{emoji}</span>
-                          <span
-                            style={{
-                              fontSize: "var(--text-sm)",
-                              fontWeight: "var(--weight-medium)",
-                              color: "var(--color-text-primary)",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {category?.name ?? "Unknown"}
+                          <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                            <span
+                              style={{
+                                fontSize: "var(--text-sm)",
+                                fontWeight: "var(--weight-medium)",
+                                color: "var(--color-text-primary)",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {category?.name ?? "Unknown"}
+                            </span>
+                            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
+                              {budget.is_default ? "Every month" : `${formatMonthYear(year, month)} only`}
+                            </span>
                           </span>
                         </div>
                         <div style={{ display: "flex", flexShrink: 0 }}>
                           <button
                             onClick={() => setSheet({ open: true, budget })}
-                            aria-label={`Edit ${category?.name ?? "budget"}`}
+                            aria-label={`Edit ${category?.name ?? "budget"} (${budget.is_default ? "every month" : `${formatMonthYear(year, month)} only`})`}
                             style={{ ...actionBtn, color: "var(--color-text-secondary)" }}
                           >
                             <EditIcon />

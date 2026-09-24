@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { AmountInput } from "@/src/components/ui/AmountInput";
@@ -10,6 +10,7 @@ import { budgetSchema } from "@/src/lib/validations/budget";
 import { budgetService } from "@/src/lib/api/services/budgets";
 import { BUDGET_KEYS } from "@/src/lib/api/keys";
 import { parseZodErrors } from "@/src/lib/utils/form";
+import { formatMonthYear } from "@/src/lib/utils/format";
 import type { Budget, Category } from "@/src/types";
 
 interface BudgetSheetProps {
@@ -31,11 +32,40 @@ export function BudgetSheet({
   categories,
   takenCategoryIds,
 }: BudgetSheetProps) {
+  if (!isOpen) return null;
+
+  return (
+    <OpenBudgetSheet
+      key={`${budget?.id ?? "new"}-${year}-${month}`}
+      onClose={onClose}
+      budget={budget}
+      year={year}
+      month={month}
+      categories={categories}
+      takenCategoryIds={takenCategoryIds}
+    />
+  );
+}
+
+type BudgetScope = "month" | "every";
+
+function OpenBudgetSheet({
+  onClose,
+  budget,
+  year,
+  month,
+  categories,
+  takenCategoryIds,
+}: Omit<BudgetSheetProps, "isOpen">) {
   const queryClient = useQueryClient();
   const isEdit = !!budget;
+  const periodLabel = formatMonthYear(year, month);
 
-  const [categoryId, setCategoryId] = useState("");
-  const [amount, setAmount] = useState("");
+  const [categoryId, setCategoryId] = useState(budget?.category_id ?? "");
+  const [amount, setAmount] = useState(budget ? String(budget.amount) : "");
+  const [scope, setScope] = useState<BudgetScope>(
+    budget?.is_default ? "every" : "month",
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const availableCategories = categories.filter(
@@ -48,25 +78,19 @@ export function BudgetSheet({
     ? categories.find((c) => c.id === budget.category_id)
     : undefined;
 
-  useEffect(() => {
-    if (isOpen) {
-      setCategoryId(budget?.category_id ?? "");
-      setAmount(budget ? String(budget.amount) : "");
-      setErrors({});
-    }
-  }, [isOpen, budget]);
-
   const mutation = useMutation({
-    mutationFn: (data: { category_id: string; amount: number }) =>
-      budget
-        ? budgetService.update(budget.id, { amount: data.amount })
-        : budgetService.create({
-            category_id: data.category_id,
-            amount: data.amount,
-            month: null,
-            year: null,
-            is_default: true,
-          }),
+    mutationFn: (data: { category_id: string; amount: number }) => {
+      if (budget && (!budget.is_default || scope === "every")) {
+        return budgetService.update(budget.id, { amount: data.amount });
+      }
+      return budgetService.create({
+        category_id: data.category_id,
+        amount: data.amount,
+        month: scope === "month" ? month : null,
+        year: scope === "month" ? year : null,
+        is_default: scope === "every",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BUDGET_KEYS.all });
       onClose();
@@ -100,7 +124,7 @@ export function BudgetSheet({
 
   return (
     <BottomSheet
-      isOpen={isOpen}
+      isOpen
       onClose={onClose}
       title={isEdit ? "Edit budget" : "Add budget"}
     >
@@ -140,6 +164,12 @@ export function BudgetSheet({
           )}
         </Field>
 
+        {!isEdit && scope === "month" && takenCategoryIds.length > 0 && (
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>
+            To change an existing recurring budget for {periodLabel}, edit that category instead.
+          </p>
+        )}
+
         <Field label="Monthly budget amount (Rp)" htmlFor="budget-amount" error={errors.amount}>
           <AmountInput
             id="budget-amount"
@@ -149,15 +179,53 @@ export function BudgetSheet({
           />
         </Field>
 
-        {isEdit && budget?.is_default && (
-          <p
-            style={{
-              fontSize: "var(--text-xs)",
-              color: "var(--color-text-tertiary)",
-              marginTop: "calc(var(--space-1) * -1)",
-            }}
-          >
-            This is your default budget — changes apply to all months.
+        {budget && !budget.is_default ? (
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>
+            This budget applies only to {periodLabel}.
+          </p>
+        ) : (
+          <fieldset style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+            <legend style={{ marginBottom: "var(--space-2)", fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)", color: "var(--color-text-secondary)" }}>
+              Applies to
+            </legend>
+            {([
+              { value: "month", title: "This month only", description: periodLabel },
+              { value: "every", title: "Every month", description: "Your recurring budget" },
+            ] as const).map((option) => (
+              <label
+                key={option.value}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--space-3)",
+                  minHeight: 52,
+                  padding: "var(--space-2) var(--space-3)",
+                  border: `1px solid ${scope === option.value ? "var(--color-border-strong)" : "var(--color-border)"}`,
+                  borderRadius: "var(--radius-md)",
+                  background: scope === option.value ? "var(--color-bg-subtle)" : "transparent",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="budget-scope"
+                  value={option.value}
+                  checked={scope === option.value}
+                  onChange={() => setScope(option.value)}
+                  style={{ accentColor: "var(--color-accent)", width: 18, height: 18 }}
+                />
+                <span style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontSize: "var(--text-base)", fontWeight: "var(--weight-medium)", color: "var(--color-text-primary)" }}>{option.title}</span>
+                  <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>{option.description}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+
+        {budget?.is_default && scope === "month" && (
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>
+            This creates a {periodLabel} amount. Your every-month budget stays the same.
           </p>
         )}
 
@@ -169,7 +237,7 @@ export function BudgetSheet({
 
         <SheetSubmitButton
           isPending={mutation.isPending}
-          label={isEdit ? "Save changes" : "Add budget"}
+          label={isEdit && budget?.is_default && scope === "month" ? `Set for ${periodLabel}` : isEdit ? "Save changes" : "Add budget"}
           pendingLabel="Saving…"
         />
       </form>
