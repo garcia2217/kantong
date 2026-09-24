@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { budgetService } from "@/src/lib/api/services/budgets";
@@ -7,7 +8,6 @@ import { categoryService } from "@/src/lib/api/services/categories";
 import { transactionService } from "@/src/lib/api/services/transactions";
 import { BUDGET_KEYS, CATEGORY_KEYS, TRANSACTION_KEYS } from "@/src/lib/api/keys";
 import { formatIDR, formatIDRCompact, formatMonthYear, getCurrentYearMonth } from "@/src/lib/utils/format";
-import { StatCard } from "@/src/components/ui/StatCard";
 import { BudgetSheet } from "@/src/components/features/BudgetSheet";
 import { CATEGORY_EMOJI } from "@/src/components/ui/TransactionRow";
 import type { Budget } from "@/src/types";
@@ -50,27 +50,6 @@ const TrashIcon = () => (
 const PlusIcon = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" {...strokeProps}>
     <path d="M7 2V12M2 7H12" />
-  </svg>
-);
-
-const BudgetTotalIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-    <rect x="3" y="2" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-    <path d="M6 6h6M6 9h6M6 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-  </svg>
-);
-
-const SpentIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-    <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.4" />
-    <path d="M6.5 9h5M9.5 6.5L12 9l-2.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const RemainingIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-    <path d="M9 2L16 6v6l-7 4-7-4V6l7-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-    <path d="M6 9l2 2 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -126,17 +105,17 @@ export default function BudgetPage() {
     else setMonth((m) => m + 1);
   };
 
-  const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
+  const { data: budgets = [], isLoading: budgetsLoading, isError: budgetsError, isFetching: budgetsFetching, refetch: refetchBudgets } = useQuery({
     queryKey: BUDGET_KEYS.byMonth(year, month),
     queryFn: () => budgetService.getForMonth(year, month),
   });
 
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError, isFetching: categoriesFetching, refetch: refetchCategories } = useQuery({
     queryKey: CATEGORY_KEYS.all,
     queryFn: categoryService.getAll,
   });
 
-  const { data: transactionsRaw, isLoading: txLoading } = useQuery({
+  const { data: transactionsRaw, isLoading: txLoading, isError: txError, isFetching: txFetching, refetch: refetchTransactions } = useQuery({
     queryKey: TRANSACTION_KEYS.byMonth(year, month),
     queryFn: () => transactionService.getByMonth(year, month),
   });
@@ -148,6 +127,11 @@ export default function BudgetPage() {
   });
 
   const isLoading = budgetsLoading || categoriesLoading || txLoading;
+  const isError = budgetsError || categoriesError || txError;
+  const isRetrying = isError && (budgetsFetching || categoriesFetching || txFetching);
+  const retryLoading = () => {
+    void Promise.all([refetchBudgets(), refetchCategories(), refetchTransactions()]);
+  };
 
   // Lookup maps
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
@@ -172,6 +156,7 @@ export default function BudgetPage() {
   const totalSpent = rows.reduce((sum, r) => sum + r.spent, 0);
   const remaining = totalBudget - totalSpent;
   const takenCategoryIds = budgets.map((b) => b.category_id);
+  const hasExpenseCategories = categories.some((category) => category.type === "expense");
 
   const handleDelete = (budget: Budget, categoryName: string) => {
     const msg = budget.is_default
@@ -283,33 +268,43 @@ export default function BudgetPage() {
           </button>
         </div>
 
-        {/* Summary stat cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: "var(--space-3)" }}>
-          <StatCard
-            label="Total budget"
-            value={formatIDR(totalBudget)}
-            isLoading={isLoading}
-            icon={<BudgetTotalIcon />}
-          />
-          <StatCard
-            label="Spent"
-            value={formatIDR(totalSpent)}
-            subtextType={totalSpent > totalBudget && !isLoading ? "negative" : "neutral"}
-            isLoading={isLoading}
-            icon={<SpentIcon />}
-          />
-          <StatCard
-            label="Remaining"
-            value={formatIDR(Math.abs(remaining))}
-            subtext={remaining < 0 && !isLoading ? "over budget" : undefined}
-            subtextType={remaining < 0 ? "negative" : "positive"}
-            isLoading={isLoading}
-            icon={<RemainingIcon />}
-          />
-        </div>
+        {isError ? (
+          <div role="alert" style={{ padding: "var(--space-6)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", background: "var(--color-bg-elevated)" }}>
+            <h2 style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-semibold)", color: "var(--color-text-primary)" }}>Couldn&apos;t load this month&apos;s budget</h2>
+            <p style={{ marginTop: "var(--space-2)", color: "var(--color-text-secondary)" }}>Check your connection and try again. No totals are shown until the data is complete.</p>
+            <button type="button" onClick={retryLoading} disabled={isRetrying} style={{ minHeight: 44, marginTop: "var(--space-4)", padding: "0 var(--space-4)", border: "1px solid var(--color-border-strong)", borderRadius: "var(--radius-md)", background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", cursor: isRetrying ? "not-allowed" : "pointer" }}>
+              {isRetrying ? "Trying again…" : "Try again"}
+            </button>
+          </div>
+        ) : isLoading ? (
+          <section role="status" aria-label="Loading budget summary" style={{ padding: "var(--space-5)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", background: "var(--color-bg-elevated)" }}>
+            <div style={{ width: 150, height: 16, borderRadius: "var(--radius-sm)", background: "var(--color-bg-subtle)" }} />
+            <div style={{ width: 220, maxWidth: "100%", height: 36, marginTop: "var(--space-3)", borderRadius: "var(--radius-sm)", background: "var(--color-bg-subtle)" }} />
+            <div style={{ width: "100%", height: 52, marginTop: "var(--space-5)", borderRadius: "var(--radius-sm)", background: "var(--color-bg-subtle)" }} />
+          </section>
+        ) : rows.length > 0 ? (
+          <section aria-label="Budget summary" style={{ padding: "var(--space-5)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", background: "var(--color-bg-elevated)" }}>
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>
+              {remaining < 0 ? "Over budget by" : "Budget remaining"}
+            </p>
+            <p style={{ marginTop: "var(--space-1)", fontSize: "var(--text-2xl)", fontWeight: "var(--weight-semibold)", color: remaining < 0 ? "var(--color-negative)" : "var(--color-text-primary)" }}>
+              {formatIDR(Math.abs(remaining))}
+            </p>
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2" style={{ marginTop: "var(--space-5)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--color-border)" }}>
+              <div>
+                <dt style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>Total budget</dt>
+                <dd style={{ fontSize: "var(--text-base)", fontWeight: "var(--weight-medium)", color: "var(--color-text-primary)" }}>{formatIDR(totalBudget)}</dd>
+              </div>
+              <div>
+                <dt style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>Spent in budgeted categories</dt>
+                <dd style={{ fontSize: "var(--text-base)", fontWeight: "var(--weight-medium)", color: "var(--color-text-primary)" }}>{formatIDR(totalSpent)}</dd>
+              </div>
+            </dl>
+          </section>
+        ) : null}
 
         {/* Budget breakdown */}
-        <section>
+        {!isError && <section>
           <div
             style={{
               background: "var(--color-bg-card)",
@@ -386,16 +381,23 @@ export default function BudgetPage() {
                 </div>
               ))
             ) : rows.length === 0 ? (
-              <p
-                style={{
-                  padding: "var(--space-8) var(--space-4)",
-                  textAlign: "center",
-                  fontSize: "var(--text-sm)",
-                  color: "var(--color-text-tertiary)",
-                }}
-              >
-                No budgets for this month. Add one below.
-              </p>
+              <div style={{ padding: "var(--space-8) var(--space-4)", textAlign: "center" }}>
+                <h3 style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-semibold)", color: "var(--color-text-primary)" }}>
+                  {hasExpenseCategories ? `No budgets for ${formatMonthYear(year, month)}` : "No expense categories yet"}
+                </h3>
+                <p style={{ margin: "var(--space-2) auto var(--space-4)", fontSize: "var(--text-base)", color: "var(--color-text-secondary)" }}>
+                  {hasExpenseCategories ? "Set a limit for a category to track its spending here." : "Create an expense category before setting a budget."}
+                </p>
+                {hasExpenseCategories ? (
+                  <button type="button" onClick={() => setSheet({ open: true })} style={{ minHeight: 44, padding: "0 var(--space-4)", border: "none", borderRadius: "var(--radius-md)", background: "var(--color-accent)", color: "var(--color-accent-fg)", fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)", cursor: "pointer" }}>
+                    Add budget
+                  </button>
+                ) : (
+                  <Link href="/settings" style={{ display: "inline-flex", alignItems: "center", minHeight: 44, padding: "0 var(--space-4)", borderRadius: "var(--radius-md)", background: "var(--color-accent)", color: "var(--color-accent-fg)", fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)", textDecoration: "none" }}>
+                    Manage categories
+                  </Link>
+                )}
+              </div>
             ) : (
               rows.map(({ budget, category, spent }, idx) => {
                 const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
@@ -502,7 +504,7 @@ export default function BudgetPage() {
             )}
 
             {/* Add budget row */}
-            <button
+            {rows.length > 0 && <button
               onClick={() => setSheet({ open: true })}
               style={{
                 display: "flex",
@@ -523,9 +525,9 @@ export default function BudgetPage() {
             >
               <PlusIcon />
               Add budget
-            </button>
+            </button>}
           </div>
-        </section>
+        </section>}
       </main>
 
       <BudgetSheet
