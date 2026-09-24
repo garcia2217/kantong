@@ -5,8 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { debtService } from "@/src/lib/api/services/debts";
 import { personService } from "@/src/lib/api/services/persons";
 import { DEBT_KEYS, PERSON_KEYS } from "@/src/lib/api/keys";
-import { formatIDR, formatIDRCompact, formatDueDate } from "@/src/lib/utils/format";
-import { StatCard } from "@/src/components/ui/StatCard";
+import { formatIDR } from "@/src/lib/utils/format";
 import { AddDebtSheet, SettleSheet } from "@/src/components/features/DebtSheet";
 import type { Debt, DebtType } from "@/src/types";
 
@@ -38,6 +37,57 @@ const TrashIcon = () => (
     <path d="M2 3.5H12M5 3.5V2.5C5 2 5.5 1.5 6 1.5H8C8.5 1.5 9 2 9 2.5V3.5M5.5 6V11M8.5 6V11M2.5 3.5L3 12C3 12.5 3.5 13 4 13H10C10.5 13 11 12.5 11 12L11.5 3.5" />
   </svg>
 );
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DUE_SOON_DAYS = 7;
+
+function calendarDayStamp(value: string): number {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return Date.UTC(year, month - 1, day);
+}
+
+function dueInfo(dueDate: string | null, today: Date) {
+  if (!dueDate) return { rank: 3, day: Infinity, label: "", tone: "" };
+
+  const day = calendarDayStamp(dueDate);
+  const todayDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const daysUntilDue = Math.round((day - todayDay) / DAY_MS);
+  const dateLabel = new Date(day).toLocaleDateString("en-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  if (daysUntilDue < 0) {
+    const daysOverdue = Math.abs(daysUntilDue);
+    return {
+      rank: 0,
+      day,
+      label: `Overdue by ${daysOverdue} day${daysOverdue === 1 ? "" : "s"} · ${dateLabel}`,
+      tone: "overdue",
+    };
+  }
+  if (daysUntilDue <= DUE_SOON_DAYS) {
+    const when = daysUntilDue === 0
+      ? "Due today"
+      : daysUntilDue === 1
+        ? "Due tomorrow"
+        : `Due in ${daysUntilDue} days`;
+    return { rank: 1, day, label: `${when} · ${dateLabel}`, tone: "soon" };
+  }
+  return { rank: 2, day, label: `Due ${dateLabel}`, tone: "" };
+}
+
+function sortByUrgency(debts: Debt[], today: Date): Debt[] {
+  return [...debts].sort((a, b) => {
+    const aDue = a.status === "settled" ? { rank: 4, day: Infinity } : dueInfo(a.due_date, today);
+    const bDue = b.status === "settled" ? { rank: 4, day: Infinity } : dueInfo(b.due_date, today);
+    if (aDue.rank !== bDue.rank) return aDue.rank - bDue.rank;
+    if (aDue.day !== bDue.day) return aDue.day - bDue.day;
+    return b.created_at.localeCompare(a.created_at);
+  });
+}
 
 // ─── Status badge ──────────────────────────────────────────────────────────────
 
@@ -88,8 +138,9 @@ interface DebtRowProps {
 }
 
 function DebtRow({ debt, personName, onSettle, onDelete, isDeleting }: DebtRowProps) {
-  const outstanding = debt.amount - debt.amount_settled;
+  const outstanding = Math.max(0, debt.amount - debt.amount_settled);
   const isSettled = debt.status === "settled";
+  const due = !isSettled ? dueInfo(debt.due_date, new Date()) : null;
 
   const actionBtn: React.CSSProperties = {
     display: "flex",
@@ -142,61 +193,20 @@ function DebtRow({ debt, personName, onSettle, onDelete, isDeleting }: DebtRowPr
           <StatusBadge status={debt.status} />
         </div>
 
-        {/* Description */}
-        {debt.description && (
-          <p
-            style={{
-              fontSize: "var(--text-sm)",
-              color: "var(--color-text-secondary)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              marginBottom: 2,
-            }}
-          >
-            {debt.description}
+        <p className="debt-row-amount">
+          {isSettled ? `${formatIDR(debt.amount)} paid` : `${formatIDR(outstanding)} remaining`}
+        </p>
+        {debt.amount_settled > 0 && !isSettled && (
+          <p className="debt-row-progress">
+            {formatIDR(debt.amount_settled)} of {formatIDR(debt.amount)} paid
           </p>
         )}
-
-        {/* Amount + due */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--space-3)",
-            flexWrap: "wrap",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "var(--text-sm)",
-              fontWeight: "var(--weight-semibold)",
-              color: isSettled ? "var(--color-text-tertiary)" : "var(--color-text-primary)",
-            }}
-          >
-            {formatIDR(debt.amount)}
-          </span>
-          {debt.amount_settled > 0 && !isSettled && (
-            <span
-              style={{
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-tertiary)",
-              }}
-            >
-              {formatIDR(outstanding)} outstanding
-            </span>
-          )}
-          {debt.due_date && !isSettled && (
-            <span
-              style={{
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-tertiary)",
-              }}
-            >
-              Due {formatDueDate(debt.due_date)}
-            </span>
-          )}
-        </div>
+        {debt.description && <p className="debt-row-description">{debt.description}</p>}
+        {due?.label && (
+          <p className={`debt-row-due${due.tone ? ` debt-row-due--${due.tone}` : ""}`}>
+            {due.label}
+          </p>
+        )}
       </div>
 
       {/* Actions */}
@@ -347,7 +357,12 @@ export default function DebtsPage() {
   });
   const debts = Array.isArray(debtsRaw) ? debtsRaw : [];
 
-  const { data: netPosition, isLoading: netLoading } = useQuery({
+  const {
+    data: netPosition,
+    isLoading: netLoading,
+    isError: netError,
+    refetch: refetchNet,
+  } = useQuery({
     queryKey: DEBT_KEYS.netPosition,
     queryFn: debtService.getNetPosition,
   });
@@ -368,8 +383,9 @@ export default function DebtsPage() {
   const isLoading = debtsLoading || personsLoading;
   const personMap = new Map(persons.map((p) => [p.id, p.name]));
 
-  const receivables = debts.filter((d) => d.type === "receivable");
-  const payables = debts.filter((d) => d.type === "payable");
+  const today = new Date();
+  const receivables = sortByUrgency(debts.filter((d) => d.type === "receivable"), today);
+  const payables = sortByUrgency(debts.filter((d) => d.type === "payable"), today);
 
   const handleDelete = (debt: Debt) => {
     const name = personMap.get(debt.person_id) ?? "this person";
@@ -422,19 +438,28 @@ export default function DebtsPage() {
         </header>
 
         <div className="debts-content">
-          {/* Net position stat cards */}
-          <div className="debts-summary grid grid-cols-2 gap-3">
-            <StatCard
-              label="They owe me"
-              value={formatIDRCompact(netPosition?.totalReceivable ?? 0)}
-              isLoading={netLoading}
-            />
-            <StatCard
-              label="I owe them"
-              value={formatIDRCompact(netPosition?.totalPayable ?? 0)}
-              isLoading={netLoading}
-            />
+          <div className="debts-summary" aria-label="Outstanding balances">
+            <div className="debts-summary-item">
+              <p>To collect</p>
+              <strong>
+                {netLoading ? "…" : netPosition ? formatIDR(netPosition.totalReceivable) : "Unavailable"}
+              </strong>
+            </div>
+            <div className="debts-summary-item">
+              <p>To pay</p>
+              <strong>
+                {netLoading ? "…" : netPosition ? formatIDR(netPosition.totalPayable) : "Unavailable"}
+              </strong>
+            </div>
           </div>
+          {netError && (
+            <p className="debts-summary-error" role="alert">
+              {netPosition ? "Balances could not be refreshed." : "Balances could not be loaded."}{" "}
+              <button type="button" onClick={() => void refetchNet()}>
+                Try again
+              </button>
+            </p>
+          )}
 
           <SectionCard title="They owe me" count={receivables.length} isLoading={isLoading}>
             {renderRows(receivables)}
