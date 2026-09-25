@@ -15,15 +15,16 @@ import type { Wallet } from "@/src/types";
 interface WalletSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onSaved: (message: string) => void;
   wallet?: Wallet;
 }
 
-export function WalletSheet({ isOpen, onClose, wallet }: WalletSheetProps) {
+export function WalletSheet({ isOpen, onClose, onSaved, wallet }: WalletSheetProps) {
   if (!isOpen) return null;
-  return <OpenWalletSheet key={wallet?.id ?? "new"} onClose={onClose} wallet={wallet} />;
+  return <OpenWalletSheet key={wallet?.id ?? "new"} onClose={onClose} onSaved={onSaved} wallet={wallet} />;
 }
 
-function OpenWalletSheet({ onClose, wallet }: Omit<WalletSheetProps, "isOpen">) {
+function OpenWalletSheet({ onClose, onSaved, wallet }: Omit<WalletSheetProps, "isOpen">) {
   const queryClient = useQueryClient();
   const isEdit = !!wallet;
 
@@ -36,8 +37,9 @@ function OpenWalletSheet({ onClose, wallet }: Omit<WalletSheetProps, "isOpen">) 
       wallet
         ? walletService.update(wallet.id, { name: data.name })
         : walletService.create({ name: data.name, balance: data.balance }),
-    onSuccess: () => {
+    onSuccess: (saved) => {
       void queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
+      onSaved(wallet ? `Wallet "${saved.name}" updated.` : `Wallet "${saved.name}" added.`);
       onClose();
     },
   });
@@ -69,6 +71,9 @@ function OpenWalletSheet({ onClose, wallet }: Omit<WalletSheetProps, "isOpen">) 
       return next;
     });
   };
+  const saveError = mutation.error instanceof Error && "code" in mutation.error && mutation.error.code === "BUSINESS_RULE_VIOLATION"
+    ? mutation.error.message
+    : "Could not save the wallet. Try again.";
 
   return (
     <BottomSheet
@@ -117,7 +122,7 @@ function OpenWalletSheet({ onClose, wallet }: Omit<WalletSheetProps, "isOpen">) 
 
         {mutation.isError && (
           <p role="alert" style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
-            Could not save the wallet. Try again.
+            {saveError}
           </p>
         )}
 

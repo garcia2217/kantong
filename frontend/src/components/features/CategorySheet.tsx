@@ -14,6 +14,7 @@ import type { Category, CategoryType } from "@/src/types";
 interface CategorySheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onSaved: (message: string) => void;
   category?: Category;
   defaultType?: CategoryType;
 }
@@ -21,15 +22,17 @@ interface CategorySheetProps {
 export function CategorySheet({
   isOpen,
   onClose,
+  onSaved,
   category,
   defaultType = "expense",
 }: CategorySheetProps) {
   if (!isOpen) return null;
-  return <OpenCategorySheet key={category?.id ?? defaultType} onClose={onClose} category={category} defaultType={defaultType} />;
+  return <OpenCategorySheet key={category?.id ?? defaultType} onClose={onClose} onSaved={onSaved} category={category} defaultType={defaultType} />;
 }
 
 function OpenCategorySheet({
   onClose,
+  onSaved,
   category,
   defaultType,
 }: Omit<CategorySheetProps, "isOpen" | "defaultType"> & { defaultType: CategoryType }) {
@@ -45,8 +48,9 @@ function OpenCategorySheet({
       category
         ? categoryService.update(category.id, { name: data.name })
         : categoryService.create({ name: data.name, type: data.type }),
-    onSuccess: () => {
+    onSuccess: (saved) => {
       void queryClient.invalidateQueries({ queryKey: CATEGORY_KEYS.all });
+      onSaved(category ? `Category "${saved.name}" updated.` : `Category "${saved.name}" added.`);
       onClose();
     },
   });

@@ -12,6 +12,7 @@ import { WalletSettingsRow } from "@/src/components/features/WalletSettingsRow";
 import { CategorySheet } from "@/src/components/features/CategorySheet";
 import { CategorySettingsGroup } from "@/src/components/features/CategorySettingsGroup";
 import { TelegramLinkSection } from "@/src/components/features/TelegramLinkSection";
+import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import type { Wallet, Category, CategoryType } from "@/src/types";
 
 // ─── Icon components ───────────────────────────────────────────────────────────
@@ -84,6 +85,10 @@ interface CategorySheetState {
     defaultType?: CategoryType;
 }
 
+type DeleteTarget =
+    | { kind: "wallet"; wallet: Wallet }
+    | { kind: "category"; category: Category };
+
 export default function SettingsPage() {
     const router = useRouter();
     const logout = useAuthStore((s) => s.logout);
@@ -97,6 +102,8 @@ export default function SettingsPage() {
     });
     const [walletsOpen, setWalletsOpen] = useState(true);
     const [categoriesOpen, setCategoriesOpen] = useState(true);
+    const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
 
     const { data: wallets = [], isLoading: walletsLoading, isError: walletsError, refetch: refetchWallets } = useQuery({
         queryKey: WALLET_KEYS.all,
@@ -110,6 +117,7 @@ export default function SettingsPage() {
                 current?.map((wallet) => ({ ...wallet, is_default: wallet.id === updated.id })),
             );
             void queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
+            setNotice(`"${updated.name}" is now your default wallet.`);
         },
     });
 
@@ -120,8 +128,11 @@ export default function SettingsPage() {
 
     const deleteWallet = useMutation({
         mutationFn: walletService.delete,
-        onSuccess: () =>
-            queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all }),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
+            setDeleteTarget(null);
+            setNotice("Wallet deleted.");
+        },
     });
 
     const deleteCategory = useMutation({
@@ -130,23 +141,19 @@ export default function SettingsPage() {
             void queryClient.invalidateQueries({ queryKey: CATEGORY_KEYS.all });
             void queryClient.invalidateQueries({ queryKey: TRANSACTION_KEYS.all });
             void queryClient.invalidateQueries({ queryKey: BUDGET_KEYS.all });
+            setDeleteTarget(null);
+            setNotice("Category deleted.");
         },
     });
 
-    const handleDeleteWallet = (wallet: Wallet) => {
-        if (window.confirm(`Delete "${wallet.name}"? This cannot be undone.`)) {
-            deleteWallet.mutate(wallet.id);
-        }
+    const openWalletDelete = (wallet: Wallet) => {
+        deleteWallet.reset();
+        setDeleteTarget({ kind: "wallet", wallet });
     };
 
-    const handleDeleteCategory = (category: Category) => {
-        if (
-            window.confirm(
-                `Delete "${category.name}"? Its budgets will be deleted, and past transactions will become uncategorized. This cannot be undone.`,
-            )
-        ) {
-            deleteCategory.mutate(category.id);
-        }
+    const openCategoryDelete = (category: Category) => {
+        deleteCategory.reset();
+        setDeleteTarget({ kind: "category", category });
     };
 
     const handleLogout = () => {
@@ -157,6 +164,14 @@ export default function SettingsPage() {
     const incomeCategories = categories.filter((c) => c.type === "income");
     const expenseCategories = categories.filter((c) => c.type === "expense");
     const orderedWallets = [...wallets].sort((a, b) => Number(b.is_default) - Number(a.is_default));
+    const isDeleting = deleteWallet.isPending || deleteCategory.isPending;
+    const walletDeleteBlocked = deleteWallet.error instanceof Error
+        && "code" in deleteWallet.error
+        && deleteWallet.error.code === "BUSINESS_RULE_VIOLATION"
+        && deleteWallet.error.message.includes("associated transactions");
+    const walletDeleteError = walletDeleteBlocked
+        ? "This wallet has transactions. Move them to another wallet before deleting it."
+        : "Could not confirm wallet deletion. Refresh the list before retrying.";
 
     const sectionCardStyle: React.CSSProperties = {
         background: "var(--color-bg-elevated)",
@@ -224,6 +239,14 @@ export default function SettingsPage() {
                     <h1>Settings</h1>
                     <p>Manage your wallets, categories, and connected services.</p>
                 </header>
+                {notice && (
+                    <div role="status" className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-positive-bg)] px-4 py-2 text-[var(--color-text-primary)]">
+                        <span>{notice}</span>
+                        <button type="button" onClick={() => setNotice(null)} className="min-h-11 rounded-[var(--radius-md)] px-2 text-[var(--text-sm)] font-medium text-[var(--color-accent)] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]">
+                            Dismiss
+                        </button>
+                    </div>
+                )}
 
                 {/* ── Wallets section ─────────────────────────────────────────── */}
                 <section>
@@ -279,11 +302,6 @@ export default function SettingsPage() {
                                         Could not change the default wallet. Try again.
                                     </p>
                                 )}
-                                {deleteWallet.isError && (
-                                    <p role="alert" style={{ padding: "0 var(--space-4) var(--space-3)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
-                                        Could not delete the wallet. Try again.
-                                    </p>
-                                )}
                                 {walletsError && wallets.length > 0 && (
                                     <p role="alert" style={{ padding: "0 var(--space-4) var(--space-3)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
                                         Wallets could not be refreshed. <button type="button" onClick={() => void refetchWallets()} style={{ minHeight: 44, color: "var(--color-accent)", textDecoration: "underline" }}>Try again</button>
@@ -325,7 +343,7 @@ export default function SettingsPage() {
                                                         wallet,
                                                     })
                                                 }
-                                                onDelete={() => handleDeleteWallet(wallet)}
+                                                onDelete={() => openWalletDelete(wallet)}
                                                 onSetDefault={() => setDefaultWallet.mutate(wallet.id)}
                                                 isDeleting={
                                                     deleteWallet.isPending &&
@@ -416,17 +434,12 @@ export default function SettingsPage() {
                                             Categories could not be refreshed. <button type="button" onClick={() => void refetchCategories()} style={{ minHeight: 44, color: "var(--color-accent)", textDecoration: "underline" }}>Try again</button>
                                         </p>
                                     )}
-                                    {deleteCategory.isError && (
-                                        <p role="alert" style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
-                                            Could not delete the category. Try again.
-                                        </p>
-                                    )}
                                     <CategorySettingsGroup
                                         type="income"
                                         categories={incomeCategories}
                                         onAdd={() => setCategorySheet({ open: true, defaultType: "income" })}
                                         onEdit={(category) => setCategorySheet({ open: true, category })}
-                                        onDelete={handleDeleteCategory}
+                                        onDelete={openCategoryDelete}
                                         deletingId={deleteCategory.isPending ? deleteCategory.variables : undefined}
                                     />
                                     <CategorySettingsGroup
@@ -434,7 +447,7 @@ export default function SettingsPage() {
                                         categories={expenseCategories}
                                         onAdd={() => setCategorySheet({ open: true, defaultType: "expense" })}
                                         onEdit={(category) => setCategorySheet({ open: true, category })}
-                                        onDelete={handleDeleteCategory}
+                                        onDelete={openCategoryDelete}
                                         deletingId={deleteCategory.isPending ? deleteCategory.variables : undefined}
                                     />
                                 </>
@@ -480,14 +493,77 @@ export default function SettingsPage() {
             <WalletSheet
                 isOpen={walletSheet.open}
                 onClose={() => setWalletSheet({ open: false })}
+                onSaved={setNotice}
                 wallet={walletSheet.wallet}
             />
             <CategorySheet
                 isOpen={categorySheet.open}
                 onClose={() => setCategorySheet({ open: false })}
+                onSaved={setNotice}
                 category={categorySheet.category}
                 defaultType={categorySheet.defaultType}
             />
+            <BottomSheet
+                isOpen={!!deleteTarget}
+                onClose={() => {
+                    if (!isDeleting) setDeleteTarget(null);
+                }}
+                title={deleteTarget?.kind === "wallet" ? "Delete wallet" : "Delete category"}
+            >
+                {deleteTarget && (
+                    <div className="flex flex-col gap-4">
+                        <p className="text-[var(--color-text-primary)]">
+                            Delete <strong>{deleteTarget.kind === "wallet" ? deleteTarget.wallet.name : deleteTarget.category.name}</strong>?
+                        </p>
+                        <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">
+                            {deleteTarget.kind === "wallet"
+                                ? "Only wallets without transactions can be deleted. If this is your default wallet, another wallet will become the default."
+                                : "Its budgets will be deleted, and past transactions will become uncategorized."} This cannot be undone.
+                        </p>
+                        {deleteTarget.kind === "wallet" && deleteWallet.isError && (
+                            <div role="alert" className="text-[var(--text-sm)] text-[var(--color-negative)]">
+                                <p>{walletDeleteError}</p>
+                                {!walletDeleteBlocked && (
+                                    <button type="button" data-sheet-no-dirty className="min-h-11 text-[var(--color-accent)] underline" onClick={() => { void refetchWallets(); setDeleteTarget(null); }}>
+                                        Refresh wallets
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                        {deleteTarget.kind === "category" && deleteCategory.isError && (
+                            <div role="alert" className="text-[var(--text-sm)] text-[var(--color-negative)]">
+                                <p>Could not confirm category deletion. Refresh the list before retrying.</p>
+                                <button type="button" data-sheet-no-dirty className="min-h-11 text-[var(--color-accent)] underline" onClick={() => { void refetchCategories(); setDeleteTarget(null); }}>
+                                    Refresh categories
+                                </button>
+                            </div>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                data-sheet-no-dirty
+                                onClick={() => setDeleteTarget(null)}
+                                disabled={isDeleting}
+                                className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border-strong)] px-4 text-[var(--color-text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                data-sheet-no-dirty
+                                disabled={isDeleting || (deleteTarget.kind === "wallet" ? deleteWallet.isError : deleteCategory.isError)}
+                                onClick={() => {
+                                    if (deleteTarget.kind === "wallet") deleteWallet.mutate(deleteTarget.wallet.id);
+                                    else deleteCategory.mutate(deleteTarget.category.id);
+                                }}
+                                className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-negative)] bg-[var(--color-negative-bg)] px-4 font-medium text-[var(--color-negative)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] disabled:opacity-50"
+                            >
+                                {isDeleting ? "Deleting…" : deleteTarget.kind === "wallet" ? "Delete wallet" : "Delete category"}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </BottomSheet>
         </>
     );
 }
