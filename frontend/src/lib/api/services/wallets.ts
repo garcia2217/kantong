@@ -32,6 +32,11 @@ export const walletService = {
     return data;
   },
 
+  setDefault: async (id: string): Promise<Wallet> => {
+    const { data } = await apiClient.patch<Wallet>(`/wallets/${id}/default`);
+    return data;
+  },
+
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/wallets/${id}`);
   },

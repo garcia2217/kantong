@@ -24,6 +24,7 @@ export interface Wallet {
   user_id: string;
   name: string;
   balance: number;
+  is_default: boolean;
   created_at: string;
   updated_at: string | null;
 }

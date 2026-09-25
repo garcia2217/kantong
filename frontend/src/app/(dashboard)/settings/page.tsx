@@ -7,8 +7,8 @@ import { useAuthStore } from "@/src/store/auth";
 import { walletService } from "@/src/lib/api/services/wallets";
 import { categoryService } from "@/src/lib/api/services/categories";
 import { WALLET_KEYS, CATEGORY_KEYS } from "@/src/lib/api/keys";
-import { formatIDR } from "@/src/lib/utils/format";
 import { WalletSheet } from "@/src/components/features/WalletSheet";
+import { WalletSettingsRow } from "@/src/components/features/WalletSettingsRow";
 import { CategorySheet } from "@/src/components/features/CategorySheet";
 import { TelegramLinkSection } from "@/src/components/features/TelegramLinkSection";
 import type { Wallet, Category, CategoryType } from "@/src/types";
@@ -264,9 +264,19 @@ export default function SettingsPage() {
     const [walletsOpen, setWalletsOpen] = useState(true);
     const [categoriesOpen, setCategoriesOpen] = useState(true);
 
-    const { data: wallets = [], isLoading: walletsLoading } = useQuery({
+    const { data: wallets = [], isLoading: walletsLoading, isError: walletsError, refetch: refetchWallets } = useQuery({
         queryKey: WALLET_KEYS.all,
         queryFn: walletService.getAll,
+    });
+
+    const setDefaultWallet = useMutation({
+        mutationFn: walletService.setDefault,
+        onSuccess: (updated) => {
+            queryClient.setQueryData<Wallet[]>(WALLET_KEYS.all, (current) =>
+                current?.map((wallet) => ({ ...wallet, is_default: wallet.id === updated.id })),
+            );
+            void queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
+        },
     });
 
     const { data: categories = [], isLoading: categoriesLoading } = useQuery({
@@ -307,6 +317,7 @@ export default function SettingsPage() {
 
     const incomeCategories = categories.filter((c) => c.type === "income");
     const expenseCategories = categories.filter((c) => c.type === "expense");
+    const orderedWallets = [...wallets].sort((a, b) => Number(b.is_default) - Number(a.is_default));
 
     const sectionCardStyle: React.CSSProperties = {
         background: "var(--color-bg-elevated)",
@@ -432,12 +443,37 @@ export default function SettingsPage() {
 
                         {walletsOpen && (
                             <>
+                                <p style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-text-secondary)", fontSize: "var(--text-sm)" }}>
+                                    Used when a Telegram transaction does not name a wallet.
+                                </p>
+                                {setDefaultWallet.isError && (
+                                    <p role="alert" style={{ padding: "0 var(--space-4) var(--space-3)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
+                                        Could not change the default wallet. Try again.
+                                    </p>
+                                )}
+                                {deleteWallet.isError && (
+                                    <p role="alert" style={{ padding: "0 var(--space-4) var(--space-3)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
+                                        Could not delete the wallet. Try again.
+                                    </p>
+                                )}
+                                {walletsError && wallets.length > 0 && (
+                                    <p role="alert" style={{ padding: "0 var(--space-4) var(--space-3)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
+                                        Wallets could not be refreshed. <button type="button" onClick={() => void refetchWallets()} style={{ minHeight: 44, color: "var(--color-accent)", textDecoration: "underline" }}>Try again</button>
+                                    </p>
+                                )}
                                 {walletsLoading ? (
                                     <>
                                         {skeletonRow}
                                         <div style={dividerStyle} />
                                         {skeletonRow}
                                     </>
+                                ) : walletsError && wallets.length === 0 ? (
+                                    <div role="alert" style={{ padding: "var(--space-4)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
+                                        <p>Could not load wallets.</p>
+                                        <button type="button" onClick={() => void refetchWallets()} style={{ minHeight: 44, color: "var(--color-accent)", textDecoration: "underline" }}>
+                                            Try again
+                                        </button>
+                                    </div>
                                 ) : wallets.length === 0 ? (
                                     <p
                                         style={{
@@ -447,27 +483,29 @@ export default function SettingsPage() {
                                             color: "var(--color-text-tertiary)",
                                         }}
                                     >
-                                        No wallets yet.
+                                        No wallets yet. Add one to track where your money is held.
                                     </p>
                                 ) : (
-                                    wallets.map((wallet, idx) => (
+                                    orderedWallets.map((wallet, idx) => (
                                         <div key={wallet.id}>
                                             {idx > 0 && <div style={dividerStyle} />}
-                                            <ItemRow
-                                                primary={wallet.name}
-                                                secondary={formatIDR(wallet.balance)}
+                                            <WalletSettingsRow
+                                                wallet={wallet}
                                                 onEdit={() =>
                                                     setWalletSheet({
                                                         open: true,
                                                         wallet,
                                                     })
                                                 }
-                                                onDelete={() =>
-                                                    handleDeleteWallet(wallet)
-                                                }
+                                                onDelete={() => handleDeleteWallet(wallet)}
+                                                onSetDefault={() => setDefaultWallet.mutate(wallet.id)}
                                                 isDeleting={
                                                     deleteWallet.isPending &&
                                                     deleteWallet.variables === wallet.id
+                                                }
+                                                isSettingDefault={
+                                                    setDefaultWallet.isPending &&
+                                                    setDefaultWallet.variables === wallet.id
                                                 }
                                             />
                                         </div>
