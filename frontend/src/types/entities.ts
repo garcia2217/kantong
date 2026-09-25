@@ -31,7 +31,7 @@ export interface Wallet {
 
 export interface Category {
   id: string;
-  user_id: string;
+  user_id: string | null;
   name: string;
   type: CategoryType;
   created_at: string;
