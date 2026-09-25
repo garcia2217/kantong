@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { LoginPanel } from "@/src/components/features/LoginPanel";
+import { LoginPreview } from "@/src/components/features/LoginPreview";
 
 export const metadata: Metadata = {
   title: "Sign in · Kantong",
@@ -59,6 +60,8 @@ export default function LoginPage() {
         </div>
 
         <div className="login-details">
+          <LoginPreview />
+
           <section className="login-features" aria-labelledby="login-features-title">
             <h2 id="login-features-title" className="login-section-title">
               Everything your money needs
