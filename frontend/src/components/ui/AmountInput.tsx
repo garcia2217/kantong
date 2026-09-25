@@ -8,6 +8,8 @@ interface AmountInputProps {
   placeholder?: string;
   style?: CSSProperties;
   id?: string;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
 }
 
 function formatWithSeparators(raw: string): string {
@@ -23,6 +25,8 @@ export function AmountInput({
   placeholder = "0",
   style,
   id,
+  ariaInvalid,
+  ariaDescribedBy,
 }: AmountInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = e.target.value.replace(/\D/g, "");
@@ -34,6 +38,8 @@ export function AmountInput({
   return (
     <input
       id={id}
+      aria-invalid={ariaInvalid}
+      aria-describedby={ariaDescribedBy}
       type="text"
       inputMode="numeric"
       autoComplete="off"

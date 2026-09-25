@@ -20,7 +20,7 @@ export function Field({ label, htmlFor, error, children }: FieldProps) {
       </label>
       {children}
       {error && (
-        <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
+        <p id={htmlFor ? `${htmlFor}-error` : undefined} role="alert" style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
           {error}
         </p>
       )}

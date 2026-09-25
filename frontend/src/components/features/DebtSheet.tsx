@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { AmountInput } from "@/src/components/ui/AmountInput";
@@ -29,26 +29,24 @@ export function AddDebtSheet({
   defaultType = "receivable",
   persons,
 }: AddDebtSheetProps) {
+  if (!isOpen) return null;
+  return <OpenAddDebtSheet key={defaultType} onClose={onClose} defaultType={defaultType} persons={persons} />;
+}
+
+function OpenAddDebtSheet({
+  onClose,
+  defaultType,
+  persons,
+}: Omit<AddDebtSheetProps, "isOpen" | "defaultType"> & { defaultType: DebtType }) {
   const queryClient = useQueryClient();
   const [type, setType] = useState<DebtType>(defaultType);
   const [personId, setPersonId] = useState("");
   const [newPersonName, setNewPersonName] = useState("");
+  const [createdPerson, setCreatedPerson] = useState<Person | null>(null);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (isOpen) {
-      setType(defaultType);
-      setPersonId("");
-      setNewPersonName("");
-      setAmount("");
-      setDescription("");
-      setDueDate("");
-      setErrors({});
-    }
-  }, [isOpen, defaultType]);
 
   const mutation = useMutation({
     mutationFn: async (data: {
@@ -60,9 +58,12 @@ export function AddDebtSheet({
       dueDate: string;
     }) => {
       let resolvedPersonId = data.personId;
-      if (data.personId === "__new__" && data.newPersonName.trim()) {
-        const created = await personService.create({ name: data.newPersonName.trim() });
+      if (data.personId === "__new__") {
+        const created = await personService.create({ name: data.newPersonName });
         resolvedPersonId = created.id;
+        setCreatedPerson(created);
+        setPersonId(created.id);
+        void queryClient.invalidateQueries({ queryKey: PERSON_KEYS.all });
       }
       return debtService.create({
         person_id: resolvedPersonId,
@@ -73,19 +74,15 @@ export function AddDebtSheet({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: PERSON_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
       onClose();
     },
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const effectivePersonId =
-      personId === "__new__" ? (newPersonName.trim() ? "__new__" : "") : personId;
-
     const result = debtSchema.safeParse({
-      person_id: effectivePersonId,
+      person_id: personId,
       new_person_name: newPersonName,
       type,
       amount: amount !== "" ? parseFloat(amount) : NaN,
@@ -100,7 +97,7 @@ export function AddDebtSheet({
     setErrors({});
     mutation.mutate({
       personId,
-      newPersonName,
+      newPersonName: result.data.new_person_name,
       type: result.data.type,
       amount: result.data.amount,
       description: result.data.description ?? "",
@@ -112,16 +109,28 @@ export function AddDebtSheet({
     ...inputBaseStyle,
     border: `0.5px solid ${errors[field] ? "var(--color-negative)" : "var(--color-border)"}`,
   });
+  const clearError = (field: string) => {
+    if (mutation.isError) mutation.reset();
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+  const availablePersons = createdPerson && !persons.some((person) => person.id === createdPerson.id)
+    ? [...persons, createdPerson]
+    : persons;
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Add debt">
+    <BottomSheet isOpen onClose={onClose} title="Add debt">
       <form
         onSubmit={handleSubmit}
         noValidate
         style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}
       >
         {/* Type toggle */}
-        <div
+        <fieldset
           style={{
             display: "flex",
             gap: "var(--space-1)",
@@ -129,13 +138,21 @@ export function AddDebtSheet({
             border: "0.5px solid var(--color-border)",
             borderRadius: "var(--radius-md)",
             padding: "var(--space-1)",
+            minWidth: 0,
           }}
         >
+          <legend style={{ fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)", color: "var(--color-text-secondary)" }}>
+            Who owes whom?
+          </legend>
           {(["receivable", "payable"] as const).map((t) => (
             <button
               key={t}
               type="button"
-              onClick={() => setType(t)}
+              onClick={() => {
+                setType(t);
+                if (mutation.isError) mutation.reset();
+              }}
+              aria-pressed={type === t}
               style={{
                 flex: 1,
                 padding: "var(--space-2)",
@@ -146,23 +163,28 @@ export function AddDebtSheet({
                 color: type === t ? "var(--color-accent-fg)" : "var(--color-text-secondary)",
                 border: "none",
                 cursor: "pointer",
-                minHeight: 36,
+                minHeight: 44,
               }}
             >
               {t === "receivable" ? "They owe me" : "I owe them"}
             </button>
           ))}
-        </div>
+        </fieldset>
 
         <Field label="Person" htmlFor="debt-person" error={errors.person_id}>
           <select
             id="debt-person"
             value={personId}
-            onChange={(e) => setPersonId(e.target.value)}
+            onChange={(e) => {
+              setPersonId(e.target.value);
+              clearError("person_id");
+            }}
+            aria-invalid={!!errors.person_id}
+            aria-describedby={errors.person_id ? "debt-person-error" : undefined}
             style={borderFor("person_id")}
           >
             <option value="">Select a person…</option>
-            {persons.map((p) => (
+            {availablePersons.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
@@ -178,8 +200,14 @@ export function AddDebtSheet({
               type="text"
               autoComplete="off"
               placeholder="e.g. Budi"
+              maxLength={100}
               value={newPersonName}
-              onChange={(e) => setNewPersonName(e.target.value)}
+              onChange={(e) => {
+                setNewPersonName(e.target.value);
+                clearError("new_person_name");
+              }}
+              aria-invalid={!!errors.new_person_name}
+              aria-describedby={errors.new_person_name ? "debt-new-person-error" : undefined}
               style={borderFor("new_person_name")}
             />
           </Field>
@@ -189,7 +217,12 @@ export function AddDebtSheet({
           <AmountInput
             id="debt-amount"
             value={amount}
-            onChange={setAmount}
+            ariaInvalid={!!errors.amount}
+            ariaDescribedBy={errors.amount ? "debt-amount-error" : undefined}
+            onChange={(value) => {
+              setAmount(value);
+              clearError("amount");
+            }}
             style={borderFor("amount")}
           />
         </Field>
@@ -200,8 +233,14 @@ export function AddDebtSheet({
             type="text"
             autoComplete="off"
             placeholder="What was this for?"
+            maxLength={500}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              clearError("description");
+            }}
+            aria-invalid={!!errors.description}
+            aria-describedby={errors.description ? "debt-description-error" : undefined}
             style={{ ...inputBaseStyle, border: "0.5px solid var(--color-border)" }}
           />
         </Field>
@@ -211,14 +250,19 @@ export function AddDebtSheet({
             id="debt-due-date"
             type="date"
             value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
+            onChange={(e) => {
+              setDueDate(e.target.value);
+              clearError("due_date");
+            }}
+            aria-invalid={!!errors.due_date}
+            aria-describedby={errors.due_date ? "debt-due-date-error" : undefined}
             style={{ ...inputBaseStyle, border: "0.5px solid var(--color-border)" }}
           />
         </Field>
 
         {mutation.isError && (
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
-            Something went wrong. Please try again.
+          <p role="alert" style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
+            Could not add the debt. Check your connection and try again.
           </p>
         )}
 
