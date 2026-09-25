@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { AmountInput } from "@/src/components/ui/AmountInput";
@@ -19,20 +19,17 @@ interface WalletSheetProps {
 }
 
 export function WalletSheet({ isOpen, onClose, wallet }: WalletSheetProps) {
+  if (!isOpen) return null;
+  return <OpenWalletSheet key={wallet?.id ?? "new"} onClose={onClose} wallet={wallet} />;
+}
+
+function OpenWalletSheet({ onClose, wallet }: Omit<WalletSheetProps, "isOpen">) {
   const queryClient = useQueryClient();
   const isEdit = !!wallet;
 
-  const [name, setName] = useState("");
-  const [balance, setBalance] = useState("0");
+  const [name, setName] = useState(wallet?.name ?? "");
+  const [balance, setBalance] = useState(wallet ? String(wallet.balance) : "0");
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (isOpen) {
-      setName(wallet?.name ?? "");
-      setBalance(wallet ? String(wallet.balance) : "0");
-      setErrors({});
-    }
-  }, [isOpen, wallet]);
 
   const mutation = useMutation({
     mutationFn: (data: { name: string; balance: number }) =>
@@ -40,7 +37,7 @@ export function WalletSheet({ isOpen, onClose, wallet }: WalletSheetProps) {
         ? walletService.update(wallet.id, { name: data.name })
         : walletService.create({ name: data.name, balance: data.balance }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
       onClose();
     },
   });
@@ -63,10 +60,19 @@ export function WalletSheet({ isOpen, onClose, wallet }: WalletSheetProps) {
     ...inputBaseStyle,
     border: `0.5px solid ${errors[field] ? "var(--color-negative)" : "var(--color-border)"}`,
   });
+  const clearError = (field: string) => {
+    if (mutation.isError) mutation.reset();
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   return (
     <BottomSheet
-      isOpen={isOpen}
+      isOpen
       onClose={onClose}
       title={isEdit ? "Edit wallet" : "Add wallet"}
     >
@@ -81,8 +87,14 @@ export function WalletSheet({ isOpen, onClose, wallet }: WalletSheetProps) {
             type="text"
             autoComplete="off"
             placeholder="e.g. BCA, Cash, GoPay"
+            maxLength={100}
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              clearError("name");
+            }}
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "wallet-name-error" : undefined}
             style={borderFor("name")}
           />
         </Field>
@@ -92,15 +104,20 @@ export function WalletSheet({ isOpen, onClose, wallet }: WalletSheetProps) {
             <AmountInput
               id="wallet-balance"
               value={balance}
-              onChange={setBalance}
+              ariaInvalid={!!errors.balance}
+              ariaDescribedBy={errors.balance ? "wallet-balance-error" : undefined}
+              onChange={(value) => {
+                setBalance(value);
+                clearError("balance");
+              }}
               style={borderFor("balance")}
             />
           </Field>
         )}
 
         {mutation.isError && (
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
-            Something went wrong. Please try again.
+          <p role="alert" style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
+            Could not save the wallet. Try again.
           </p>
         )}
 

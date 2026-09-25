@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { Field, inputBaseStyle } from "@/src/components/ui/Field";
@@ -24,20 +24,21 @@ export function CategorySheet({
   category,
   defaultType = "expense",
 }: CategorySheetProps) {
+  if (!isOpen) return null;
+  return <OpenCategorySheet key={category?.id ?? defaultType} onClose={onClose} category={category} defaultType={defaultType} />;
+}
+
+function OpenCategorySheet({
+  onClose,
+  category,
+  defaultType,
+}: Omit<CategorySheetProps, "isOpen" | "defaultType"> & { defaultType: CategoryType }) {
   const queryClient = useQueryClient();
   const isEdit = !!category;
 
-  const [name, setName] = useState("");
-  const [type, setType] = useState<CategoryType>(defaultType);
+  const [name, setName] = useState(category?.name ?? "");
+  const [type, setType] = useState<CategoryType>(category?.type ?? defaultType);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (isOpen) {
-      setName(category?.name ?? "");
-      setType(category?.type ?? defaultType);
-      setErrors({});
-    }
-  }, [isOpen, category, defaultType]);
 
   const mutation = useMutation({
     mutationFn: (data: { name: string; type: CategoryType }) =>
@@ -45,7 +46,7 @@ export function CategorySheet({
         ? categoryService.update(category.id, { name: data.name })
         : categoryService.create({ name: data.name, type: data.type }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CATEGORY_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: CATEGORY_KEYS.all });
       onClose();
     },
   });
@@ -63,7 +64,7 @@ export function CategorySheet({
 
   return (
     <BottomSheet
-      isOpen={isOpen}
+      isOpen
       onClose={onClose}
       title={isEdit ? "Edit category" : "Add category"}
     >
@@ -74,7 +75,7 @@ export function CategorySheet({
       >
         {/* Type toggle — only shown in add mode; type is fixed when editing */}
         {!isEdit && (
-          <div
+          <fieldset
             style={{
               display: "flex",
               gap: "var(--space-1)",
@@ -82,13 +83,21 @@ export function CategorySheet({
               border: "0.5px solid var(--color-border)",
               borderRadius: "var(--radius-md)",
               padding: "var(--space-1)",
+              minWidth: 0,
             }}
           >
+            <legend style={{ fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)", color: "var(--color-text-secondary)" }}>
+              Category type
+            </legend>
             {(["expense", "income"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
-                onClick={() => setType(t)}
+                onClick={() => {
+                  setType(t);
+                  if (mutation.isError) mutation.reset();
+                }}
+                aria-pressed={type === t}
                 style={{
                   flex: 1,
                   padding: "var(--space-2)",
@@ -99,14 +108,14 @@ export function CategorySheet({
                   color: type === t ? "var(--color-accent-fg)" : "var(--color-text-secondary)",
                   border: "none",
                   cursor: "pointer",
-                  minHeight: 36,
+                  minHeight: 44,
                   textTransform: "capitalize",
                 }}
               >
                 {t}
               </button>
             ))}
-          </div>
+          </fieldset>
         )}
 
         <Field label="Category name" htmlFor="category-name" error={errors.name}>
@@ -115,8 +124,15 @@ export function CategorySheet({
             type="text"
             autoComplete="off"
             placeholder={type === "income" ? "e.g. Salary, Bonus" : "e.g. Food, Transport"}
+            maxLength={100}
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              setErrors((current) => ({ ...current, name: "" }));
+              if (mutation.isError) mutation.reset();
+            }}
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "category-name-error" : undefined}
             style={{
               ...inputBaseStyle,
               border: `0.5px solid ${errors.name ? "var(--color-negative)" : "var(--color-border)"}`,
@@ -125,8 +141,8 @@ export function CategorySheet({
         </Field>
 
         {mutation.isError && (
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
-            Something went wrong. Please try again.
+          <p role="alert" style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
+            Could not save the category. Try again.
           </p>
         )}
 
