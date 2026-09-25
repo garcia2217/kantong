@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { GoogleSignInButton } from "@/src/components/features/GoogleSignInButton";
 import { LoginPanel } from "@/src/components/features/LoginPanel";
 import { LoginPreview } from "@/src/components/features/LoginPreview";
 import { TelegramLogDemo } from "@/src/components/features/TelegramLogDemo";
@@ -77,6 +78,14 @@ export default function LoginPage() {
                 </li>
               ))}
             </ul>
+          </section>
+
+          {/* The desktop panel stays in view, so only small screens need this. */}
+          <section className="login-closing" aria-labelledby="login-closing-title">
+            <h2 id="login-closing-title" className="login-section-title">
+              Ready to try Kantong?
+            </h2>
+            <GoogleSignInButton />
           </section>
         </div>
       </div>

@@ -9,8 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Finance Tracker",
-  description: "Personal finance tracking app",
+  title: "Kantong",
+  description:
+    "Track wallets, budgets and debts in one place, and log spending from Telegram.",
 };
 
 export default function RootLayout({
