@@ -110,6 +110,7 @@ html:has(.overview-v2[data-dashboard-theme="light"]),
 html:has(.transactions-page),
 html:has(.budget-page),
 html:has(.debts-page),
+html:has(.settings-page),
 html:has(.login-page) {
   color-scheme: light;
   --color-bg-app: #fafbf7;
@@ -170,6 +171,7 @@ html:has(.overview-v2[data-dashboard-theme="dark"]) {
   html:has(.transactions-page),
   html:has(.budget-page),
   html:has(.debts-page),
+  html:has(.settings-page),
   html:has(.login-page) {
     color-scheme: dark;
     --color-bg-app: #2f3439;
