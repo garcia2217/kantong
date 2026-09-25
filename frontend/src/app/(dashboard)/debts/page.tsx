@@ -335,6 +335,7 @@ export default function DebtsPage() {
   const [payablePage, setPayablePage] = useState(1);
   const [settledPage, setSettledPage] = useState(1);
   const [settledOpen, setSettledOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const receivables = useQuery({
     queryKey: DEBT_KEYS.browse("active", "receivable", search, receivablePage),
@@ -370,6 +371,7 @@ export default function DebtsPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
       setDetailDebt(null);
+      setNotice("Debt deleted.");
     },
   });
 
@@ -433,6 +435,32 @@ export default function DebtsPage() {
         </header>
 
         <div className="debts-content">
+          {notice && (
+            <div
+              role="status"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "var(--space-3)",
+                padding: "var(--space-3) var(--space-4)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--radius-md)",
+                background: "var(--color-positive-bg)",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              <span>{notice}</span>
+              <button
+                type="button"
+                onClick={() => setNotice(null)}
+                aria-label="Dismiss notification"
+                style={{ minHeight: 44, padding: "0 var(--space-2)", color: "var(--color-accent)", cursor: "pointer" }}
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
           <div className="debts-summary" aria-label="Outstanding balances">
             <div className="debts-summary-item">
               <p>To collect</p>
@@ -539,6 +567,7 @@ export default function DebtsPage() {
       <AddDebtSheet
         isOpen={addSheet.open}
         onClose={() => setAddSheet((s) => ({ ...s, open: false }))}
+        onCreated={() => setNotice("Debt added.")}
         defaultType={addSheet.defaultType}
         persons={persons}
       />
@@ -547,12 +576,14 @@ export default function DebtsPage() {
       <SettleSheet
         isOpen={!!settleDebt}
         onClose={() => setSettleDebt(null)}
+        onRecorded={() => setNotice("Payment recorded.")}
         debt={settleDebt}
       />
       <DebtDetailSheet
         debt={detailDebt}
         onClose={() => setDetailDebt(null)}
         onUpdated={setDetailDebt}
+        onSaved={() => setNotice("Debt details saved.")}
         onDelete={() => {
           if (detailDebt) handleDelete(detailDebt);
         }}

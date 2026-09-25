@@ -25,7 +25,7 @@ export type DebtFormValues = z.infer<typeof debtSchema>;
 export const settleSchema = z.object({
   amount_settled: z
     .number({ error: "Enter a valid amount" })
-    .positive("Settlement amount must be greater than 0"),
+    .positive("Payment amount must be greater than 0"),
 });
 
 export type SettleFormValues = z.infer<typeof settleSchema>;

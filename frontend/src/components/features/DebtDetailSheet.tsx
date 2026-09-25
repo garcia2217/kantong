@@ -15,12 +15,13 @@ interface DebtDetailSheetProps {
   debt: DebtBrowseItem | null;
   onClose: () => void;
   onUpdated: (debt: DebtBrowseItem) => void;
+  onSaved: () => void;
   onDelete: () => void;
   isDeleting: boolean;
   deleteError: boolean;
 }
 
-export function DebtDetailSheet({ debt, onClose, onUpdated, onDelete, isDeleting, deleteError }: DebtDetailSheetProps) {
+export function DebtDetailSheet({ debt, onClose, onUpdated, onSaved, onDelete, isDeleting, deleteError }: DebtDetailSheetProps) {
   if (!debt) return null;
   return (
     <OpenDebtDetailSheet
@@ -28,6 +29,7 @@ export function DebtDetailSheet({ debt, onClose, onUpdated, onDelete, isDeleting
       debt={debt}
       onClose={onClose}
       onUpdated={onUpdated}
+      onSaved={onSaved}
       onDelete={onDelete}
       isDeleting={isDeleting}
       deleteError={deleteError}
@@ -35,7 +37,7 @@ export function DebtDetailSheet({ debt, onClose, onUpdated, onDelete, isDeleting
   );
 }
 
-function OpenDebtDetailSheet({ debt, onClose, onUpdated, onDelete, isDeleting, deleteError }: Omit<DebtDetailSheetProps, "debt"> & { debt: DebtBrowseItem }) {
+function OpenDebtDetailSheet({ debt, onClose, onUpdated, onSaved, onDelete, isDeleting, deleteError }: Omit<DebtDetailSheetProps, "debt"> & { debt: DebtBrowseItem }) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(debt.description ?? "");
@@ -51,6 +53,7 @@ function OpenDebtDetailSheet({ debt, onClose, onUpdated, onDelete, isDeleting, d
     onSuccess: (saved) => {
       void queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
       onUpdated({ ...saved, person_name: debt.person_name });
+      onSaved();
       onClose();
     },
   });
@@ -74,7 +77,13 @@ function OpenDebtDetailSheet({ debt, onClose, onUpdated, onDelete, isDeleting, d
             <textarea
               id="debt-detail-description"
               value={description}
-              onChange={(event) => setDescription(event.target.value)}
+              onChange={(event) => {
+                setDescription(event.target.value);
+                setDescriptionError(undefined);
+                if (update.isError) update.reset();
+              }}
+              aria-invalid={!!descriptionError}
+              aria-describedby={descriptionError ? "debt-detail-description-error" : undefined}
               rows={3}
               style={{ ...inputBaseStyle, border: "1px solid var(--color-border-strong)", resize: "vertical" }}
             />
@@ -84,7 +93,10 @@ function OpenDebtDetailSheet({ debt, onClose, onUpdated, onDelete, isDeleting, d
               id="debt-detail-due-date"
               type="date"
               value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
+              onChange={(event) => {
+                setDueDate(event.target.value);
+                if (update.isError) update.reset();
+              }}
               style={{ ...inputBaseStyle, border: "1px solid var(--color-border-strong)" }}
             />
           </Field>

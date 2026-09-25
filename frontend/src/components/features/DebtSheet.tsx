@@ -19,6 +19,7 @@ import type { DebtBrowseItem, DebtType, Person } from "@/src/types";
 interface AddDebtSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onCreated: () => void;
   defaultType?: DebtType;
   persons: Person[];
 }
@@ -26,15 +27,17 @@ interface AddDebtSheetProps {
 export function AddDebtSheet({
   isOpen,
   onClose,
+  onCreated,
   defaultType = "receivable",
   persons,
 }: AddDebtSheetProps) {
   if (!isOpen) return null;
-  return <OpenAddDebtSheet key={defaultType} onClose={onClose} defaultType={defaultType} persons={persons} />;
+  return <OpenAddDebtSheet key={defaultType} onClose={onClose} onCreated={onCreated} defaultType={defaultType} persons={persons} />;
 }
 
 function OpenAddDebtSheet({
   onClose,
+  onCreated,
   defaultType,
   persons,
 }: Omit<AddDebtSheetProps, "isOpen" | "defaultType"> & { defaultType: DebtType }) {
@@ -75,6 +78,7 @@ function OpenAddDebtSheet({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
+      onCreated();
       onClose();
     },
   });
@@ -262,7 +266,7 @@ function OpenAddDebtSheet({
 
         {mutation.isError && (
           <p role="alert" style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
-            Could not add the debt. Check your connection and try again.
+            Could not add the debt. Try again.
           </p>
         )}
 
@@ -281,15 +285,16 @@ function OpenAddDebtSheet({
 interface SettleSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onRecorded: () => void;
   debt: DebtBrowseItem | null;
 }
 
-export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
+export function SettleSheet({ isOpen, onClose, onRecorded, debt }: SettleSheetProps) {
   if (!isOpen || !debt) return null;
-  return <OpenSettleSheet key={debt.id} debt={debt} onClose={onClose} />;
+  return <OpenSettleSheet key={debt.id} debt={debt} onClose={onClose} onRecorded={onRecorded} />;
 }
 
-function OpenSettleSheet({ debt, onClose }: { debt: DebtBrowseItem; onClose: () => void }) {
+function OpenSettleSheet({ debt, onClose, onRecorded }: { debt: DebtBrowseItem; onClose: () => void; onRecorded: () => void }) {
   const queryClient = useQueryClient();
   const outstanding = Math.max(0, debt.amount - debt.amount_settled);
   const [amount, setAmount] = useState(String(outstanding));
@@ -304,6 +309,7 @@ function OpenSettleSheet({ debt, onClose }: { debt: DebtBrowseItem; onClose: () 
       debtService.update(id, { amount_settled: newSettled }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
+      onRecorded();
       onClose();
     },
   });
@@ -354,9 +360,12 @@ function OpenSettleSheet({ debt, onClose }: { debt: DebtBrowseItem; onClose: () 
           <AmountInput
             id="settle-amount"
             value={amount}
+            ariaInvalid={!!error}
+            ariaDescribedBy={error ? "settle-amount-error" : undefined}
             onChange={(value) => {
               setAmount(value);
               setError(undefined);
+              if (mutation.isError) mutation.reset();
             }}
             style={{
               ...inputBaseStyle,
@@ -370,6 +379,7 @@ function OpenSettleSheet({ debt, onClose }: { debt: DebtBrowseItem; onClose: () 
           onClick={() => {
             setAmount(String(outstanding));
             setError(undefined);
+            if (mutation.isError) mutation.reset();
           }}
         >
           Use full balance
@@ -387,8 +397,8 @@ function OpenSettleSheet({ debt, onClose }: { debt: DebtBrowseItem; onClose: () 
         )}
 
         {mutation.isError && (
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
-            Something went wrong. Please try again.
+          <p role="alert" style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
+            Could not record the payment. Try again.
           </p>
         )}
 
