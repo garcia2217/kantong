@@ -15,16 +15,27 @@ interface DebtDetailSheetProps {
   debt: DebtBrowseItem | null;
   onClose: () => void;
   onUpdated: (debt: DebtBrowseItem) => void;
+  onDelete: () => void;
+  isDeleting: boolean;
+  deleteError: boolean;
 }
 
-export function DebtDetailSheet({ debt, onClose, onUpdated }: DebtDetailSheetProps) {
+export function DebtDetailSheet({ debt, onClose, onUpdated, onDelete, isDeleting, deleteError }: DebtDetailSheetProps) {
   if (!debt) return null;
   return (
-    <OpenDebtDetailSheet key={debt.id} debt={debt} onClose={onClose} onUpdated={onUpdated} />
+    <OpenDebtDetailSheet
+      key={debt.id}
+      debt={debt}
+      onClose={onClose}
+      onUpdated={onUpdated}
+      onDelete={onDelete}
+      isDeleting={isDeleting}
+      deleteError={deleteError}
+    />
   );
 }
 
-function OpenDebtDetailSheet({ debt, onClose, onUpdated }: Omit<DebtDetailSheetProps, "debt"> & { debt: DebtBrowseItem }) {
+function OpenDebtDetailSheet({ debt, onClose, onUpdated, onDelete, isDeleting, deleteError }: Omit<DebtDetailSheetProps, "debt"> & { debt: DebtBrowseItem }) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(debt.description ?? "");
@@ -94,6 +105,16 @@ function OpenDebtDetailSheet({ debt, onClose, onUpdated }: Omit<DebtDetailSheetP
           </dl>
           <button type="button" data-sheet-no-dirty className="debt-detail-edit" onClick={() => setIsEditing(true)}>
             Edit details
+          </button>
+          {deleteError && <p role="alert" className="debt-detail-error">Could not delete this debt. Try again.</p>}
+          <button
+            type="button"
+            data-sheet-no-dirty
+            className="debt-detail-delete"
+            onClick={onDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting…" : "Delete debt"}
           </button>
         </div>
       )}

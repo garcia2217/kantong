@@ -12,7 +12,7 @@ import { personService } from "@/src/lib/api/services/persons";
 import { DEBT_KEYS, PERSON_KEYS } from "@/src/lib/api/keys";
 import { parseZodErrors } from "@/src/lib/utils/form";
 import { formatIDR, formatDueDate } from "@/src/lib/utils/format";
-import type { Debt, DebtType, Person } from "@/src/types";
+import type { DebtBrowseItem, DebtType, Person } from "@/src/types";
 
 // ─── Add Debt Sheet ────────────────────────────────────────────────────────────
 
@@ -237,35 +237,32 @@ export function AddDebtSheet({
 interface SettleSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  debt: Debt | null;
+  debt: DebtBrowseItem | null;
 }
 
 export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
-  const queryClient = useQueryClient();
-  const [amount, setAmount] = useState("");
-  const [error, setError] = useState<string | undefined>();
+  if (!isOpen || !debt) return null;
+  return <OpenSettleSheet key={debt.id} debt={debt} onClose={onClose} />;
+}
 
-  useEffect(() => {
-    if (isOpen && debt) {
-      const outstanding = debt.amount - debt.amount_settled;
-      setAmount(String(outstanding));
-      setError(undefined);
-    }
-  }, [isOpen, debt]);
+function OpenSettleSheet({ debt, onClose }: { debt: DebtBrowseItem; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const outstanding = Math.max(0, debt.amount - debt.amount_settled);
+  const [amount, setAmount] = useState(String(outstanding));
+  const [error, setError] = useState<string | undefined>();
+  const enteredAmount = amount ? Number(amount) : 0;
+  const exceedsOutstanding = enteredAmount > outstanding;
+  const remainingAfterPayment = Math.max(0, outstanding - enteredAmount);
+  const isReceivable = debt.type === "receivable";
 
   const mutation = useMutation({
     mutationFn: ({ id, newSettled }: { id: string; newSettled: number }) =>
       debtService.update(id, { amount_settled: newSettled }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: DEBT_KEYS.netPosition });
+      void queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
       onClose();
     },
   });
-
-  if (!debt) return null;
-
-  const outstanding = debt.amount - debt.amount_settled;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -277,66 +274,73 @@ export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
       return;
     }
     if (result.data.amount_settled > outstanding) {
-      setError(`Max settlement is ${formatIDR(outstanding)}`);
+      setError(`Payment cannot exceed ${formatIDR(outstanding)}`);
       return;
     }
     setError(undefined);
-    const newSettled = Math.min(
-      debt.amount_settled + result.data.amount_settled,
-      debt.amount,
-    );
+    const newSettled = Math.min(debt.amount_settled + result.data.amount_settled, debt.amount);
     mutation.mutate({ id: debt.id, newSettled });
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Record settlement">
+    <BottomSheet isOpen onClose={onClose} title="Record payment">
       <form
         onSubmit={handleSubmit}
         noValidate
         style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}
       >
-        {/* Summary */}
-        <div
-          style={{
-            background: "var(--color-bg-subtle)",
-            border: "0.5px solid var(--color-border)",
-            borderRadius: "var(--radius-md)",
-            padding: "var(--space-3) var(--space-4)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--space-1)",
-          }}
-        >
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>
-            Outstanding
+        <div className="debt-payment-summary">
+          <p className="debt-payment-person">{debt.person_name}</p>
+          <p className="debt-payment-direction">
+            {isReceivable ? "They owe you" : "You owe them"}
           </p>
-          <p
-            style={{
-              fontSize: "var(--text-lg)",
-              fontWeight: "var(--weight-semibold)",
-              color: "var(--color-text-primary)",
-            }}
-          >
-            {formatIDR(outstanding)}
-          </p>
+          <p className="debt-payment-outstanding">{formatIDR(outstanding)} remaining</p>
           {debt.due_date && (
-            <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-tertiary)" }}>
+            <p className="debt-payment-due">
               Due {formatDueDate(debt.due_date)}
             </p>
           )}
         </div>
 
-        <Field label="Amount to settle (Rp)" htmlFor="settle-amount" error={error}>
+        <Field
+          label={isReceivable ? "Payment received (Rp)" : "Payment made (Rp)"}
+          htmlFor="settle-amount"
+          error={error}
+        >
           <AmountInput
             id="settle-amount"
             value={amount}
-            onChange={setAmount}
+            onChange={(value) => {
+              setAmount(value);
+              setError(undefined);
+            }}
             style={{
               ...inputBaseStyle,
               border: `0.5px solid ${error ? "var(--color-negative)" : "var(--color-border)"}`,
             }}
           />
         </Field>
+        <button
+          type="button"
+          className="debt-payment-full"
+          onClick={() => {
+            setAmount(String(outstanding));
+            setError(undefined);
+          }}
+        >
+          Use full balance
+        </button>
+
+        {exceedsOutstanding ? (
+          <p className="debt-payment-error" role="alert">
+            Payment cannot exceed the {formatIDR(outstanding)} remaining balance.
+          </p>
+        ) : (
+          <div className="debt-payment-preview" aria-live="polite">
+            <span>Remaining after payment</span>
+            <strong>{formatIDR(remainingAfterPayment)}</strong>
+          </div>
+        )}
 
         {mutation.isError && (
           <p style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
@@ -346,7 +350,7 @@ export function SettleSheet({ isOpen, onClose, debt }: SettleSheetProps) {
 
         <SheetSubmitButton
           isPending={mutation.isPending}
-          label="Record settlement"
+          label="Record payment"
           pendingLabel="Recording…"
         />
       </form>

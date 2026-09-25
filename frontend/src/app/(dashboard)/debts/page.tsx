@@ -27,18 +27,6 @@ const PlusIcon = () => (
   </svg>
 );
 
-const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" {...strokeProps}>
-    <path d="M2.5 7L5.5 10L11.5 4" />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" {...strokeProps}>
-    <path d="M2 3.5H12M5 3.5V2.5C5 2 5.5 1.5 6 1.5H8C8.5 1.5 9 2 9 2.5V3.5M5.5 6V11M8.5 6V11M2.5 3.5L3 12C3 12.5 3.5 13 4 13H10C10.5 13 11 12.5 11 12L11.5 3.5" />
-  </svg>
-);
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DUE_SOON_DAYS = 7;
 
@@ -122,39 +110,16 @@ interface DebtRowProps {
   debt: DebtBrowseItem;
   onDetails: () => void;
   onSettle: () => void;
-  onDelete: () => void;
-  isDeleting: boolean;
 }
 
-function DebtRow({ debt, onDetails, onSettle, onDelete, isDeleting }: DebtRowProps) {
+function DebtRow({ debt, onDetails, onSettle }: DebtRowProps) {
   const outstanding = Math.max(0, debt.amount - debt.amount_settled);
   const isSettled = debt.status === "settled";
   const due = !isSettled ? dueInfo(debt.due_date, new Date()) : null;
   const personName = debt.person_name;
 
-  const actionBtn: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 44,
-    minHeight: 44,
-    padding: "var(--space-2)",
-    background: "transparent",
-    border: "none",
-    borderRadius: "var(--radius-sm)",
-    cursor: "pointer",
-  };
-
   return (
-    <div
-      style={{
-        padding: "var(--space-3) var(--space-4)",
-        display: "flex",
-        alignItems: "flex-start",
-        gap: "var(--space-3)",
-        minHeight: 64,
-      }}
-    >
+    <div className="debt-row">
       {/* Content */}
       <button
         type="button"
@@ -209,29 +174,18 @@ function DebtRow({ debt, onDetails, onSettle, onDelete, isDeleting }: DebtRowPro
         <span className="debt-row-view">View details →</span>
       </button>
 
-      {/* Actions */}
-      <div style={{ display: "flex", flexShrink: 0 }}>
-        {!isSettled && (
+      {!isSettled && (
+        <div className="debt-row-actions">
           <button
+            type="button"
+            className="debt-record-payment"
             onClick={onSettle}
-            aria-label={`Settle debt with ${personName}`}
-            style={{ ...actionBtn, color: "var(--color-positive)" }}
+            aria-label={`Record payment with ${personName}`}
           >
-            <CheckIcon />
+            Record payment
           </button>
-        )}
-        <button
-          onClick={onDelete}
-          disabled={isDeleting}
-          aria-label={`Delete debt with ${personName}`}
-          style={{
-            ...actionBtn,
-            color: isDeleting ? "var(--color-text-tertiary)" : "var(--color-negative)",
-          }}
-        >
-          <TrashIcon />
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -373,7 +327,7 @@ export default function DebtsPage() {
     open: false,
     defaultType: "receivable",
   });
-  const [settleDebt, setSettleDebt] = useState<Debt | null>(null);
+  const [settleDebt, setSettleDebt] = useState<DebtBrowseItem | null>(null);
   const [detailDebt, setDetailDebt] = useState<DebtBrowseItem | null>(null);
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");
@@ -415,6 +369,7 @@ export default function DebtsPage() {
     mutationFn: debtService.delete,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: DEBT_KEYS.all });
+      setDetailDebt(null);
     },
   });
 
@@ -439,10 +394,11 @@ export default function DebtsPage() {
         {idx > 0 && <div style={divider} />}
         <DebtRow
           debt={debt}
-          onDetails={() => setDetailDebt(debt)}
+          onDetails={() => {
+            deleteDebt.reset();
+            setDetailDebt(debt);
+          }}
           onSettle={() => setSettleDebt(debt)}
-          onDelete={() => handleDelete(debt)}
-          isDeleting={deleteDebt.isPending && deleteDebt.variables === debt.id}
         />
       </div>
     ));
@@ -597,6 +553,11 @@ export default function DebtsPage() {
         debt={detailDebt}
         onClose={() => setDetailDebt(null)}
         onUpdated={setDetailDebt}
+        onDelete={() => {
+          if (detailDebt) handleDelete(detailDebt);
+        }}
+        isDeleting={deleteDebt.isPending}
+        deleteError={deleteDebt.isError}
       />
     </>
   );
