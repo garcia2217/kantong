@@ -15,7 +15,7 @@ export function TelegramLinkSection() {
   const code = data?.code;
 
   const cardStyle: React.CSSProperties = {
-    background: "var(--color-bg-card)",
+    background: "var(--color-bg-elevated)",
     border: "0.5px solid var(--color-border)",
     borderRadius: "var(--radius-lg)",
     overflow: "hidden",

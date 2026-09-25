@@ -309,7 +309,7 @@ export default function SettingsPage() {
     const expenseCategories = categories.filter((c) => c.type === "expense");
 
     const sectionCardStyle: React.CSSProperties = {
-        background: "var(--color-bg-card)",
+        background: "var(--color-bg-elevated)",
         border: "0.5px solid var(--color-border)",
         borderRadius: "var(--radius-lg)",
         overflow: "hidden",
@@ -380,54 +380,11 @@ export default function SettingsPage() {
 
     return (
         <>
-            {/* Mobile top bar */}
-            <header
-                className="md:hidden"
-                style={{
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 40,
-                    display: "flex",
-                    alignItems: "center",
-                    height: 56,
-                    padding: "0 var(--space-4)",
-                    background: "var(--color-bg-base)",
-                    borderBottom: "0.5px solid var(--color-border)",
-                }}
-            >
-                <h1
-                    style={{
-                        fontSize: "var(--text-lg)",
-                        fontWeight: "var(--weight-semibold)",
-                        color: "var(--color-text-primary)",
-                    }}
-                >
-                    Settings
-                </h1>
-            </header>
-
-            {/* Page content */}
-            <main
-                style={{
-                    maxWidth: 640,
-                    margin: "0 auto",
-                    padding: "var(--space-6) var(--space-4)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--space-6)",
-                }}
-            >
-                {/* Desktop title */}
-                <h1
-                    className="hidden md:block"
-                    style={{
-                        fontSize: "var(--text-2xl)",
-                        fontWeight: "var(--weight-semibold)",
-                        color: "var(--color-text-primary)",
-                    }}
-                >
-                    Settings
-                </h1>
+            <div className="settings-page">
+                <header className="settings-header">
+                    <h1>Settings</h1>
+                    <p>Manage your wallets, categories, and connected services.</p>
+                </header>
 
                 {/* ── Wallets section ─────────────────────────────────────────── */}
                 <section>
@@ -714,7 +671,7 @@ export default function SettingsPage() {
                         </button>
                     </div>
                 </section>
-            </main>
+            </div>
 
             {/* ── Sheets ──────────────────────────────────────────────────────── */}
             <WalletSheet
