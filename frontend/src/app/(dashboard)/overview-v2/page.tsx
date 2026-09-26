@@ -10,32 +10,26 @@ import { useOverviewData } from "@/src/lib/api/useOverviewData";
 import { useAuthStore } from "@/src/store/auth";
 import type { DashboardAttentionTone } from "@/src/lib/mock/mock-dashboard";
 
-const cardStyle: React.CSSProperties = {
-  background: "var(--color-bg-elevated)",
-  border: "1px solid var(--color-border)",
-  borderRadius: "var(--radius-lg)",
+const ATTENTION_SYMBOL: Record<DashboardAttentionTone, string> = {
+  warning: "!",
+  danger: "!",
+  info: "i",
 };
 
-const attentionStyles: Record<
-  DashboardAttentionTone,
-  { color: string; background: string; symbol: string }
-> = {
-  warning: {
-    color: "var(--color-warning)",
-    background: "var(--color-warning-bg)",
-    symbol: "!",
-  },
-  danger: {
-    color: "var(--color-negative)",
-    background: "var(--color-negative-bg)",
-    symbol: "!",
-  },
-  info: {
-    color: "var(--color-text-secondary)",
-    background: "var(--color-bg-subtle)",
-    symbol: "i",
-  },
-};
+// Budget bar colour steps: calm, nearly spent, over. The text beside the bar
+// says the same thing, so colour is never the only signal.
+function budgetTone(percentageUsed: number): "ok" | "near" | "over" {
+  if (percentageUsed > 100) return "over";
+  if (percentageUsed >= 80) return "near";
+  return "ok";
+}
+
+function greeting(date: Date): string {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 function EyeIcon({ hidden }: { hidden: boolean }) {
   return hidden ? (
@@ -69,10 +63,10 @@ export default function OverviewV2Page() {
   const userName = useAuthStore((state) => state.user?.username) || "there";
   const { data, isLoading, isError, hasBudget } = useOverviewData(userName);
   if (isLoading) {
-    return <div className="overview-v2" role="status" aria-live="polite" style={{ padding: "var(--space-8)", color: "var(--color-text-secondary)" }}>Loading your overview…</div>;
+    return <div className="ov-page ov-status" role="status" aria-live="polite">Loading your overview…</div>;
   }
   if (isError || !data) {
-    return <div className="overview-v2" role="alert" style={{ padding: "var(--space-8)", color: "var(--color-negative)" }}>Your overview could not be loaded. Please refresh the page to try again.</div>;
+    return <div className="ov-page ov-status ov-status--error" role="alert">Your overview could not be loaded. Please refresh the page to try again.</div>;
   }
   const latestCashFlow = data.cashFlow.at(-1);
   const monthlySaved = latestCashFlow
@@ -80,242 +74,72 @@ export default function OverviewV2Page() {
     : 0;
   const displayAmount = (amount: number, compact = false): string =>
     valuesHidden ? "Rp ••••••" : compact ? formatIDRCompact(amount) : formatIDR(amount);
+  const summary = [
+    { label: "Income", value: latestCashFlow?.income ?? 0, tone: "in" },
+    { label: "Expenses", value: latestCashFlow?.expenses ?? 0, tone: "out" },
+    { label: "Saved", value: monthlySaved, tone: "neutral" },
+  ] as const;
 
   return (
     <>
-      <div
-        className="overview-v2"
-       
-        style={{
-          width: "100%",
-          maxWidth: 1180,
-          margin: "0 auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--space-6)",
-        }}
-      >
-        <header className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p
-              style={{
-                marginBottom: "var(--space-1)",
-                color: "var(--color-text-secondary)",
-                fontSize: "var(--text-xs)",
-                fontWeight: "var(--weight-medium)",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-              }}
-            >
-              {data.periodLabel}
-            </p>
-            <h1
-              style={{
-                color: "var(--color-text-primary)",
-                fontSize: "var(--text-2xl)",
-                fontWeight: "var(--weight-semibold)",
-                letterSpacing: "-0.025em",
-                lineHeight: "var(--leading-tight)",
-              }}
-            >
-              Good morning, {data.userName}
-            </h1>
-            <p
-              className="hidden sm:block"
-              style={{
-                marginTop: "var(--space-1)",
-                color: "var(--color-text-secondary)",
-                fontSize: "var(--text-sm)",
-              }}
-            >
-              Here&apos;s how your money is doing this month.
-            </p>
-          </div>
+      <div className="ov-page">
+        <header>
+          <p className="ov-eyebrow">{data.periodLabel}</p>
+          <h1 className="ov-title">
+            {greeting(new Date())}, {data.userName}
+          </h1>
+          <p className="ov-subtitle">Here&apos;s how your money is doing this month.</p>
         </header>
 
-        <section
-          aria-labelledby="available-balance-heading"
-          style={{
-            paddingBottom: "var(--space-6)",
-            borderBottom: "1px solid var(--color-border)",
-          }}
-        >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                <h2
-                  id="available-balance-heading"
-                  style={{
-                    color: "var(--color-text-secondary)",
-                    fontSize: "var(--text-sm)",
-                    fontWeight: "var(--weight-medium)",
-                  }}
-                >
-                  Available balance
-                </h2>
-                <button
-                  type="button"
-                  aria-label={valuesHidden ? "Show financial values" : "Hide financial values"}
-                  aria-pressed={valuesHidden}
-                  onClick={() => setValuesHidden((hidden) => !hidden)}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: -10,
-                    marginLeft: -6,
-                    border: 0,
-                    borderRadius: "var(--radius-md)",
-                    background: "transparent",
-                    color: "var(--color-text-secondary)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <EyeIcon hidden={valuesHidden} />
-                </button>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  flexWrap: "wrap",
-                  gap: "var(--space-3)",
-                  marginTop: "var(--space-1)",
-                }}
+        <section aria-labelledby="available-balance-heading" className="ov-balance">
+          <div className="min-w-0">
+            <div className="ov-balance__label-row">
+              <h2 id="available-balance-heading" className="ov-balance__label">
+                Available balance
+              </h2>
+              <button
+                type="button"
+                className="ov-icon-button"
+                aria-label={valuesHidden ? "Show financial values" : "Hide financial values"}
+                aria-pressed={valuesHidden}
+                onClick={() => setValuesHidden((hidden) => !hidden)}
               >
-                <p
-                  style={{
-                    color: "var(--color-text-primary)",
-                    fontSize: "clamp(30px, 5vw, 44px)",
-                    fontWeight: "var(--weight-semibold)",
-                    letterSpacing: "-0.04em",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {displayAmount(data.balance.availableBalance)}
-                </p>
-              </div>
-              <p
-                style={{
-                  marginTop: "var(--space-2)",
-                  color: "var(--color-text-secondary)",
-                  fontSize: "var(--text-sm)",
-                }}
-              >
-                Across {data.balance.walletCount} wallets
-              </p>
+                <EyeIcon hidden={valuesHidden} />
+              </button>
             </div>
-            <button
-              type="button"
-              className="btn-primary w-full shrink-0 sm:w-auto"
-              onClick={() => setSheetOpen(true)}
-              style={{
-                minHeight: 44,
-                padding: "0 var(--space-4)",
-                border: "none",
-                borderRadius: "var(--radius-md)",
-                background: "var(--color-accent)",
-                color: "var(--color-accent-fg)",
-                cursor: "pointer",
-                fontSize: "var(--text-sm)",
-                fontWeight: "var(--weight-medium)",
-              }}
-            >
-              <span aria-hidden="true">＋</span> Add transaction
-            </button>
+            <p className="ov-balance__value">{displayAmount(data.balance.availableBalance)}</p>
+            <p className="ov-balance__meta">Across {data.balance.walletCount} wallets</p>
           </div>
+          <button
+            type="button"
+            className="btn-primary ov-balance__action"
+            onClick={() => setSheetOpen(true)}
+          >
+            <span aria-hidden="true">＋</span> Add transaction
+          </button>
         </section>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.85fr)]">
-          <section aria-labelledby="cash-flow-heading" style={{ ...cardStyle, padding: "var(--space-5)" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: "var(--space-3)",
-                marginBottom: "var(--space-5)",
-              }}
-            >
+        <div className="ov-grid ov-grid--main">
+          <section aria-labelledby="cash-flow-heading" className="ov-card ov-card--padded">
+            <div className="ov-card__head ov-card__head--flush">
               <div>
-                <h2
-                  id="cash-flow-heading"
-                  style={{
-                    color: "var(--color-text-primary)",
-                    fontSize: "var(--text-lg)",
-                    fontWeight: "var(--weight-semibold)",
-                  }}
-                >
-                  Cash flow
-                </h2>
-                <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-sm)" }}>
-                  Income and expenses over time
-                </p>
+                <h2 id="cash-flow-heading" className="ov-card__title ov-card__title--lg">Cash flow</h2>
+                <p className="ov-card__subtitle">Income and expenses over time</p>
               </div>
-              <span
-                style={{
-                  padding: "var(--space-1) var(--space-2)",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--color-bg-subtle)",
-                  color: "var(--color-text-secondary)",
-                  fontSize: "var(--text-xs)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Last 6 months
-              </span>
+              <span className="ov-chip">Last 6 months</span>
             </div>
 
             {valuesHidden ? (
-              <div
-                style={{
-                  minHeight: 270,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--color-bg-subtle)",
-                  color: "var(--color-text-secondary)",
-                  fontSize: "var(--text-sm)",
-                }}
-              >
-                Financial values are hidden
-              </div>
+              <div className="ov-hidden-chart">Financial values are hidden</div>
             ) : (
               <CashFlowChart data={data.cashFlow} />
             )}
 
-            <dl
-              className="grid grid-cols-3"
-              style={{
-                gap: "var(--space-3)",
-                marginTop: "var(--space-4)",
-                paddingTop: "var(--space-4)",
-                borderTop: "1px solid var(--color-border)",
-              }}
-            >
-              {[
-                { label: "Income", value: latestCashFlow?.income ?? 0, color: "var(--color-positive)" },
-                { label: "Expenses", value: latestCashFlow?.expenses ?? 0, color: "var(--color-negative)" },
-                { label: "Saved", value: monthlySaved, color: "var(--color-text-primary)" },
-              ].map((item) => (
-                <div key={item.label} style={{ minWidth: 0 }}>
-                  <dt style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)" }}>
-                    {item.label}
-                  </dt>
-                  <dd
-                    style={{
-                      marginTop: 2,
-                      overflow: "hidden",
-                      color: item.color,
-                      fontSize: "var(--text-sm)",
-                      fontWeight: "var(--weight-semibold)",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
+            <dl className="ov-summary">
+              {summary.map((item) => (
+                <div key={item.label} className="min-w-0">
+                  <dt className="ov-summary__label">{item.label}</dt>
+                  <dd className={`ov-summary__value ov-amount--${item.tone}`}>
                     {displayAmount(item.value, true)}
                   </dd>
                 </div>
@@ -323,255 +147,89 @@ export default function OverviewV2Page() {
             </dl>
           </section>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
-            <section aria-labelledby="budget-heading" style={{ ...cardStyle, padding: "var(--space-5)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)" }}>
+          <div className="ov-stack">
+            <section aria-labelledby="budget-heading" className="ov-card ov-card--padded">
+              <div className="ov-budget__head">
                 <div>
-                  <h2
-                    id="budget-heading"
-                    style={{
-                      color: "var(--color-text-primary)",
-                      fontSize: "var(--text-base)",
-                      fontWeight: "var(--weight-semibold)",
-                    }}
-                  >
-                    Monthly budget
-                  </h2>
-                  <p
-                    style={{
-                      marginTop: "var(--space-1)",
-                      color: "var(--color-text-secondary)",
-                      fontSize: "var(--text-sm)",
-                    }}
-                  >
+                  <h2 id="budget-heading" className="ov-card__title">Monthly budget</h2>
+                  <p className="ov-card__subtitle">
                     {hasBudget ? `${displayAmount(data.budget.spent, true)} of ${displayAmount(data.budget.limit, true)}` : "No budgets set for this month"}
                   </p>
                 </div>
-                <strong style={{ color: "var(--color-text-primary)", fontSize: "var(--text-lg)" }}>
+                <strong className="ov-budget__percent">
                   {hasBudget ? `${data.budget.percentageUsed}%` : "—"}
                 </strong>
               </div>
-              {hasBudget && <div
-                role="progressbar"
-                aria-label="Monthly budget used"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.min(100, data.budget.percentageUsed)}
-                aria-valuetext={`${data.budget.percentageUsed}% used`}
-                style={{
-                  height: 8,
-                  marginTop: "var(--space-4)",
-                  overflow: "hidden",
-                  borderRadius: 4,
-                  background: "var(--color-bg-subtle)",
-                }}
-              >
+              {hasBudget && (
                 <div
-                  style={{
-                    width: `${Math.min(100, data.budget.percentageUsed)}%`,
-                    height: "100%",
-                    borderRadius: 4,
-                    background: data.budget.percentageUsed > 100 ? "var(--color-negative)" : "var(--color-positive)",
-                  }}
-                />
-              </div>}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "var(--space-3)",
-                  marginTop: "var(--space-3)",
-                  color: "var(--color-text-secondary)",
-                  fontSize: "var(--text-xs)",
-                }}
-              >
-                <span>{hasBudget ? data.budget.remaining < 0 ? `${displayAmount(-data.budget.remaining, true)} over budget` : `${displayAmount(data.budget.remaining, true)} remaining` : "Start with a category budget"}</span>
-                <Link href="/budget" style={{ color: "inherit", fontWeight: "var(--weight-medium)" }}>
-                  View budget
-                </Link>
+                  role="progressbar"
+                  aria-label="Monthly budget used"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.min(100, data.budget.percentageUsed)}
+                  aria-valuetext={`${data.budget.percentageUsed}% used`}
+                  className="ov-meter"
+                >
+                  <div
+                    className={`ov-meter__fill ov-meter__fill--${budgetTone(data.budget.percentageUsed)}`}
+                    style={{ width: `${Math.min(100, data.budget.percentageUsed)}%` }}
+                  />
+                </div>
+              )}
+              <div className="ov-budget__foot">
+                <span className={hasBudget && data.budget.remaining < 0 ? "ov-amount--out" : undefined}>
+                  {hasBudget ? data.budget.remaining < 0 ? `${displayAmount(-data.budget.remaining, true)} over budget` : `${displayAmount(data.budget.remaining, true)} remaining` : "Start with a category budget"}
+                </span>
+                <Link href="/budget" className="ov-link">View budget</Link>
               </div>
             </section>
 
-            <section aria-labelledby="attention-heading" style={cardStyle}>
-              <div style={{ padding: "var(--space-4) var(--space-5)", borderBottom: "1px solid var(--color-border)" }}>
-                <h2
-                  id="attention-heading"
-                  style={{
-                    color: "var(--color-text-primary)",
-                    fontSize: "var(--text-base)",
-                    fontWeight: "var(--weight-semibold)",
-                  }}
-                >
-                  Needs attention
-                </h2>
+            <section aria-labelledby="attention-heading" className="ov-card">
+              <div className="ov-card__head">
+                <h2 id="attention-heading" className="ov-card__title">Needs attention</h2>
               </div>
-              <div>
-                {data.attentionItems.length === 0 && (
-                  <p style={{ padding: "var(--space-4) var(--space-5)", color: "var(--color-text-secondary)", fontSize: "var(--text-sm)" }}>
-                    Nothing needs your attention right now.
-                  </p>
-                )}
-                {data.attentionItems.map((item, index) => {
-                  const tone = attentionStyles[item.tone];
-                  return (
-                    <Link
-                      key={item.id}
-                      href={item.href}
-                      style={{
-                        display: "flex",
-                        gap: "var(--space-3)",
-                        padding: "var(--space-4) var(--space-5)",
-                        borderBottom:
-                          index < data.attentionItems.length - 1
-                            ? "1px solid var(--color-border)"
-                            : undefined,
-                        color: "inherit",
-                        textDecoration: "none",
-                      }}
-                    >
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          width: 24,
-                          height: 24,
-                          flexShrink: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: "50%",
-                          background: tone.background,
-                          color: tone.color,
-                          fontSize: "var(--text-xs)",
-                          fontWeight: "var(--weight-semibold)",
-                        }}
-                      >
-                        {tone.symbol}
-                      </span>
-                      <span style={{ minWidth: 0 }}>
-                        <strong
-                          style={{
-                            display: "block",
-                            color: "var(--color-text-primary)",
-                            fontSize: "var(--text-sm)",
-                            fontWeight: "var(--weight-medium)",
-                          }}
-                        >
-                          {item.title}
-                        </strong>
-                        <span
-                          style={{
-                            display: "block",
-                            marginTop: 2,
-                            color: "var(--color-text-secondary)",
-                            fontSize: "var(--text-xs)",
-                            lineHeight: "var(--leading-normal)",
-                          }}
-                        >
-                          {item.description}
-                        </span>
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
+              {data.attentionItems.length === 0 && (
+                <p className="ov-empty">✓ Nothing needs your attention right now.</p>
+              )}
+              {data.attentionItems.map((item) => (
+                <Link key={item.id} href={item.href} className="ov-row ov-attention">
+                  <span aria-hidden="true" className={`ov-attention__badge ov-attention__badge--${item.tone}`}>
+                    {ATTENTION_SYMBOL[item.tone]}
+                  </span>
+                  <span className="min-w-0">
+                    <strong className="ov-row__title">{item.title}</strong>
+                    <span className="ov-row__meta">{item.description}</span>
+                  </span>
+                </Link>
+              ))}
             </section>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section aria-labelledby="categories-heading" style={cardStyle}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "var(--space-4) var(--space-5)",
-                borderBottom: "1px solid var(--color-border)",
-              }}
-            >
+        <div className="ov-grid ov-grid--halves">
+          <section aria-labelledby="categories-heading" className="ov-card">
+            <div className="ov-card__head">
               <div>
-                <h2
-                  id="categories-heading"
-                  style={{
-                    color: "var(--color-text-primary)",
-                    fontSize: "var(--text-base)",
-                    fontWeight: "var(--weight-semibold)",
-                  }}
-                >
-                  Top spending
-                </h2>
-                <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)" }}>
-                  Largest categories this month
-                </p>
+                <h2 id="categories-heading" className="ov-card__title">Top spending</h2>
+                <p className="ov-card__subtitle">Largest categories this month</p>
               </div>
-              <Link href="/transactions" style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)" }}>
-                View all
-              </Link>
+              <Link href="/transactions" className="ov-link">View all</Link>
             </div>
-            <div
-              className="grid grid-cols-1 items-center sm:grid-cols-[minmax(180px,0.8fr)_minmax(0,1.2fr)]"
-              style={{ gap: "var(--space-4)", padding: "var(--space-4) var(--space-5)" }}
-            >
+            <div className="ov-categories">
               <SpendingBreakdownChart data={data.topCategories} />
 
               <div aria-label="Spending categories">
-                {data.topCategories.map((category, index) => (
-                  <div
-                    key={category.id}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "12px minmax(0, 1fr) auto",
-                      alignItems: "center",
-                      columnGap: "var(--space-2)",
-                      minHeight: 48,
-                      borderBottom:
-                        index < data.topCategories.length - 1
-                          ? "1px solid var(--color-border)"
-                          : undefined,
-                    }}
-                  >
+                {data.topCategories.map((category) => (
+                  <div key={category.id} className="ov-category">
                     <span
                       aria-hidden="true"
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 3,
-                        background: category.color,
-                      }}
+                      className="ov-category__swatch"
+                      style={{ background: category.color }}
                     />
-                    <span
-                      style={{
-                        minWidth: 0,
-                        overflow: "hidden",
-                        color: "var(--color-text-primary)",
-                        fontSize: "var(--text-sm)",
-                        fontWeight: "var(--weight-medium)",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {category.name}
-                    </span>
-                    <span style={{ textAlign: "right" }}>
-                      <span
-                        style={{
-                          display: "block",
-                          color: "var(--color-text-primary)",
-                          fontSize: "var(--text-sm)",
-                          fontWeight: "var(--weight-medium)",
-                        }}
-                      >
-                        {displayAmount(category.amount, true)}
-                      </span>
-                      <span
-                        style={{
-                          display: "block",
-                          color: "var(--color-text-secondary)",
-                          fontSize: "var(--text-xs)",
-                        }}
-                      >
-                        {category.percentage.toFixed(1)}%
-                      </span>
+                    <span className="ov-row__title ov-truncate">{category.name}</span>
+                    <span className="ov-category__amount">
+                      <span className="ov-row__title">{displayAmount(category.amount, true)}</span>
+                      <span className="ov-row__meta">{category.percentage.toFixed(1)}%</span>
                     </span>
                   </div>
                 ))}
@@ -579,90 +237,31 @@ export default function OverviewV2Page() {
             </div>
           </section>
 
-          <section aria-labelledby="recent-heading" style={cardStyle}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "var(--space-4) var(--space-5)",
-                borderBottom: "1px solid var(--color-border)",
-              }}
-            >
+          <section aria-labelledby="recent-heading" className="ov-card">
+            <div className="ov-card__head">
               <div>
-                <h2
-                  id="recent-heading"
-                  style={{
-                    color: "var(--color-text-primary)",
-                    fontSize: "var(--text-base)",
-                    fontWeight: "var(--weight-semibold)",
-                  }}
-                >
-                  Recent activity
-                </h2>
-                <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)" }}>
-                  Latest account movements
-                </p>
+                <h2 id="recent-heading" className="ov-card__title">Recent activity</h2>
+                <p className="ov-card__subtitle">Latest account movements</p>
               </div>
-              <Link href="/transactions" style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)" }}>
-                View all
-              </Link>
+              <Link href="/transactions" className="ov-link">View all</Link>
             </div>
-            <div>
-              {data.recentTransactions.length === 0 && (
-                <p style={{ padding: "var(--space-4) var(--space-5)", color: "var(--color-text-secondary)", fontSize: "var(--text-sm)" }}>
-                  No transactions yet. Add one to see your activity here.
-                </p>
-              )}
-              {data.recentTransactions.map((transaction, index) => (
-                <div
-                  key={transaction.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "var(--space-3)",
-                    minHeight: 62,
-                    padding: "var(--space-2) var(--space-5)",
-                    borderBottom:
-                      index < data.recentTransactions.length - 1
-                        ? "1px solid var(--color-border)"
-                        : undefined,
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p
-                      style={{
-                        overflow: "hidden",
-                        color: "var(--color-text-primary)",
-                        fontSize: "var(--text-sm)",
-                        fontWeight: "var(--weight-medium)",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {transaction.description}
-                    </p>
-                    <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)" }}>
-                      {transaction.category} · {formatTime(transaction.occurredAt)}
-                    </p>
-                  </div>
-                  <p
-                    style={{
-                      flexShrink: 0,
-                      color:
-                        transaction.type === "income"
-                          ? "var(--color-positive)"
-                          : "var(--color-text-primary)",
-                      fontSize: "var(--text-sm)",
-                      fontWeight: "var(--weight-semibold)",
-                    }}
-                  >
-                    {transaction.type === "income" ? "+" : transaction.type === "expense" ? "−" : ""}
-                    {displayAmount(transaction.amount, true)}
+            {data.recentTransactions.length === 0 && (
+              <p className="ov-empty">No transactions yet. Add one to see your activity here.</p>
+            )}
+            {data.recentTransactions.map((transaction) => (
+              <div key={transaction.id} className="ov-row ov-recent">
+                <div className="min-w-0 flex-1">
+                  <p className="ov-row__title ov-truncate">{transaction.description}</p>
+                  <p className="ov-row__meta">
+                    {transaction.category} · {formatTime(transaction.occurredAt)}
                   </p>
                 </div>
-              ))}
-            </div>
+                <p className={`ov-recent__amount ov-amount--${transaction.type === "income" ? "in" : "neutral"}`}>
+                  {transaction.type === "income" ? "+" : transaction.type === "expense" ? "−" : ""}
+                  {displayAmount(transaction.amount, true)}
+                </p>
+              </div>
+            ))}
           </section>
         </div>
       </div>
