@@ -63,30 +63,16 @@ function EyeIcon({ hidden }: { hidden: boolean }) {
   );
 }
 
-function ThemeIcon({ theme }: { theme: "light" | "dark" }) {
-  return theme === "light" ? (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path d="M16.8 12.8A7 7 0 0 1 7.2 3.2a7 7 0 1 0 9.6 9.6Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-    </svg>
-  ) : (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <circle cx="10" cy="10" r="3.2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M10 1.8v1.7m0 13v1.7M1.8 10h1.7m13 0h1.7M4.2 4.2l1.2 1.2m9.2 9.2 1.2 1.2m0-11.6-1.2 1.2m-9.2 9.2-1.2 1.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export default function OverviewV2Page() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [valuesHidden, setValuesHidden] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const userName = useAuthStore((state) => state.user?.username) || "there";
   const { data, isLoading, isError, hasBudget } = useOverviewData(userName);
   if (isLoading) {
-    return <div className="overview-v2" data-dashboard-theme={theme} role="status" aria-live="polite" style={{ padding: "var(--space-8)", color: "var(--color-text-secondary)" }}>Loading your overview…</div>;
+    return <div className="overview-v2" role="status" aria-live="polite" style={{ padding: "var(--space-8)", color: "var(--color-text-secondary)" }}>Loading your overview…</div>;
   }
   if (isError || !data) {
-    return <div className="overview-v2" data-dashboard-theme={theme} role="alert" style={{ padding: "var(--space-8)", color: "var(--color-negative)" }}>Your overview could not be loaded. Please refresh the page to try again.</div>;
+    return <div className="overview-v2" role="alert" style={{ padding: "var(--space-8)", color: "var(--color-negative)" }}>Your overview could not be loaded. Please refresh the page to try again.</div>;
   }
   const latestCashFlow = data.cashFlow.at(-1);
   const monthlySaved = latestCashFlow
@@ -99,7 +85,7 @@ export default function OverviewV2Page() {
     <>
       <div
         className="overview-v2"
-        data-dashboard-theme={theme}
+       
         style={{
           width: "100%",
           maxWidth: 1180,
@@ -145,24 +131,6 @@ export default function OverviewV2Page() {
               Here&apos;s how your money is doing this month.
             </p>
           </div>
-
-          <button
-            type="button"
-            className="overview-v2-theme-toggle flex shrink-0 items-center justify-center"
-            aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
-            onClick={() => setTheme((current) => current === "light" ? "dark" : "light")}
-            style={{
-              width: 44,
-              height: 44,
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-md)",
-              background: "var(--color-bg-elevated)",
-              color: "var(--color-text-secondary)",
-              cursor: "pointer",
-            }}
-          >
-            <ThemeIcon theme={theme} />
-          </button>
         </header>
 
         <section

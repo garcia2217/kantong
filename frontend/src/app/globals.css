@@ -1,39 +1,46 @@
 @import "tailwindcss";
 
-/* ─── Design Tokens: Light Mode ──────────────────────────────────────────── */
+/* ─── Design Tokens ──────────────────────────────────────────────────────── */
+/* One palette for the whole app. Components use only these semantic tokens,
+   so a colour change happens here and nowhere else. */
 :root {
+  color-scheme: light;
+
   /* Backgrounds */
-  --color-bg-app: #ffffff;
-  --color-bg-sidebar: #f7f6f3;
+  --color-bg-app: #fafbf7;
+  --color-bg-sidebar: #f0f4ee;
   --color-bg-elevated: #ffffff;
-  --color-bg-subtle: #f7f6f3;
-  --color-bg-hover: #efefed;
-  --color-bg-active: #efefed;
+  --color-bg-subtle: #f0f4ee;
+  --color-bg-hover: #e8eee7;
+  --color-bg-active: #dce9de;
 
   /* Borders */
-  --color-border: #e8e5df;
-  --color-border-strong: #d6d3cc;
+  --color-border: #dce5db;
+  --color-border-strong: #98ab9d;
 
   /* Text */
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #6b6b6b;
-  --color-text-tertiary: #9b9b9b;
+  --color-text-primary: #20342c;
+  --color-text-secondary: #56665c;
+  --color-text-tertiary: #64746a;
 
-  /* Semantic — Positive */
-  --color-positive: #448361;
-  --color-positive-bg: #eaf3e9;
-
-  /* Semantic — Negative */
-  --color-negative: #c0392b;
-  --color-negative-bg: #fcecea;
-
-  /* Semantic — Neutral tag */
-  --color-tag-bg: #efefed;
-  --color-tag-text: #5a5a5a;
+  /* Semantic */
+  --color-positive: #176b50;
+  --color-positive-bg: #e4f1e8;
+  --color-negative: #b14036;
+  --color-negative-bg: #fbece8;
+  --color-warning: #8a6100;
+  --color-warning-bg: #fff3cd;
+  --color-tag-bg: #e8eee7;
+  --color-tag-text: #445a4b;
 
   /* Interactive accent */
-  --color-accent: #2b2b2b;
+  --color-accent: #2f5a86;
   --color-accent-fg: #ffffff;
+
+  /* Chart categories */
+  --color-category-food: #b38352;
+  --color-category-transport: #6b7a89;
+  --color-category-shopping: #7d5ba6;
 
   /* Typography */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
@@ -74,115 +81,24 @@
   --bp-lg: 1024px;
 }
 
-/* ─── Design Tokens: Dark Mode ───────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg-app: #191919;
-    --color-bg-sidebar: #202020;
-    --color-bg-elevated: #202020;
-    --color-bg-subtle: #232323;
-    --color-bg-hover: #2c2c2c;
-    --color-bg-active: #2c2c2c;
-
-    --color-border: #2f2f2f;
-    --color-border-strong: #3a3a3a;
-
-    --color-text-primary: #e8e8e6;
-    --color-text-secondary: #9b9b99;
-    --color-text-tertiary: #6b6b69;
-
-    --color-positive: #5aa67a;
-    --color-positive-bg: #1a2e22;
-
-    --color-negative: #e05a4e;
-    --color-negative-bg: #2e1a1a;
-
-    --color-tag-bg: #2c2c2c;
-    --color-tag-text: #9b9b99;
-
-    --color-accent: #e8e8e6;
-    --color-accent-fg: #191919;
-  }
-}
-
-/* The overview preview can be evaluated in either palette without changing other routes. */
-html:has(.overview-v2[data-dashboard-theme="light"]),
-html:has(.transactions-page),
-html:has(.budget-page),
-html:has(.debts-page),
-html:has(.settings-page) {
-  color-scheme: light;
-  --color-bg-app: #fafbf7;
-  --color-bg-sidebar: #f0f4ee;
-  --color-bg-elevated: #ffffff;
-  --color-bg-subtle: #f0f4ee;
-  --color-bg-hover: #e8eee7;
-  --color-bg-active: #dce9de;
-  --color-border: #dce5db;
-  --color-border-strong: #98ab9d;
-  --color-text-primary: #20342c;
-  --color-text-secondary: #56665c;
-  --color-text-tertiary: #64746a;
-  --color-positive: #176b50;
-  --color-positive-bg: #e4f1e8;
-  --color-negative: #b14036;
-  --color-negative-bg: #fbece8;
-  --color-warning: #8a6100;
-  --color-warning-bg: #fff3cd;
-  --color-tag-bg: #e8eee7;
-  --color-tag-text: #445a4b;
-  --color-accent: #2f5a86;
-  --color-accent-fg: #ffffff;
-  --color-category-food: #b38352;
-  --color-category-transport: #6b7a89;
-  --color-category-shopping: #7d5ba6;
-}
-
-html:has(.overview-v2[data-dashboard-theme="dark"]) {
-  color-scheme: dark;
-  --color-bg-app: #2f3439;
-  --color-bg-sidebar: #343b40;
-  --color-bg-elevated: #394147;
-  --color-bg-subtle: #454f54;
-  --color-bg-hover: #4b565b;
-  --color-bg-active: #536168;
-  --color-border: #647177;
-  --color-border-strong: #8c9a9f;
-  --color-text-primary: #f2f5f2;
-  --color-text-secondary: #c7d0d1;
-  --color-text-tertiary: #96a29d;
-  --color-positive: #9bcfaf;
-  --color-positive-bg: #355446;
-  --color-negative: #eaa69b;
-  --color-negative-bg: #593e40;
-  --color-warning: #e8c789;
-  --color-warning-bg: #474239;
-  --color-tag-bg: #4b565b;
-  --color-tag-text: #e0e8e5;
-  --color-accent: #8fb8e0;
-  --color-accent-fg: #1a2733;
-  --color-category-food: #e0ad74;
-  --color-category-transport: #9fb0bd;
-  --color-category-shopping: #c2a3dd;
-}
-
-@media (prefers-color-scheme: dark) {
-  html:has(.transactions-page),
-  html:has(.budget-page),
-  html:has(.debts-page),
-  html:has(.settings-page) {
     color-scheme: dark;
+
     --color-bg-app: #2f3439;
     --color-bg-sidebar: #343b40;
     --color-bg-elevated: #394147;
     --color-bg-subtle: #454f54;
     --color-bg-hover: #4b565b;
     --color-bg-active: #536168;
+
     --color-border: #647177;
     --color-border-strong: #8c9a9f;
+
     --color-text-primary: #f2f5f2;
     --color-text-secondary: #c7d0d1;
     --color-text-tertiary: #96a29d;
+
     --color-positive: #9bcfaf;
     --color-positive-bg: #355446;
     --color-negative: #eaa69b;
@@ -191,14 +107,14 @@ html:has(.overview-v2[data-dashboard-theme="dark"]) {
     --color-warning-bg: #474239;
     --color-tag-bg: #4b565b;
     --color-tag-text: #e0e8e5;
+
     --color-accent: #8fb8e0;
     --color-accent-fg: #1a2733;
-  }
-}
 
-.overview-v2-theme-toggle:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+    --color-category-food: #e0ad74;
+    --color-category-transport: #9fb0bd;
+    --color-category-shopping: #c2a3dd;
+  }
 }
 
 /* ─── Tailwind v4 Theme Mapping ──────────────────────────────────────────── */
