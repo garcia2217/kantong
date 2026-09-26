@@ -1246,3 +1246,28 @@
     gap: var(--space-2) var(--space-6);
   }
 }
+
+/* ─── Landing: sticky phone CTA ──────────────────────────────────────────── */
+.lp-sticky {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--lp-ink) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--lp-ink-line);
+  transform: translateY(110%);
+  transition: transform 250ms ease;
+}
+
+.lp-sticky[data-visible="true"] { transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-sticky { transition: none; }
+}
+
+@media (min-width: 768px) {
+  .lp-sticky { display: none; }
+}

@@ -4,6 +4,7 @@ import { LoginPanel } from "@/src/components/features/LoginPanel";
 import { LandingFaq } from "@/src/components/features/LandingFaq";
 import { LandingFeatures } from "@/src/components/features/LandingFeatures";
 import { LandingProblem } from "@/src/components/features/LandingProblem";
+import { LandingStickyCta } from "@/src/components/features/LandingStickyCta";
 import { LandingTryIt } from "@/src/components/features/LandingTryIt";
 import { displayFont } from "@/src/lib/fonts";
 import "./landing.css";
@@ -46,6 +47,8 @@ export default function LandingPage() {
 
         <LoginPanel />
       </main>
+
+      <LandingStickyCta />
     </div>
   );
 }
