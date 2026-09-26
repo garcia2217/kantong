@@ -43,7 +43,7 @@ function BudgetMeter({ outcome }: BudgetMeterProps) {
       </div>
       <p className="lp-try-budget__note">
         {isOver
-          ? `⚠️ Over by ${formatIDR(spentAfter - budgetLimit)}. Kantong would warn you here.`
+          ? `⚠️ Over by ${formatIDR(spentAfter - budgetLimit)}. Kantong flags this on your budget.`
           : `${formatIDR(budgetLimit - spentAfter)} left this month`}
       </p>
     </div>
