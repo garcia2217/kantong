@@ -5,12 +5,11 @@ export default function proxy(request: NextRequest): NextResponse {
     return NextResponse.next();
   }
 
-  return NextResponse.redirect(new URL("/login", request.url));
+  return NextResponse.redirect(new URL("/", request.url));
 }
 
 export const config = {
   matcher: [
-    "/",
     "/overview/:path*",
     "/transactions/:path*",
     "/budget/:path*",

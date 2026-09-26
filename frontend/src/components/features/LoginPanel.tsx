@@ -23,11 +23,11 @@ export function LoginPanel() {
   });
 
   useEffect(() => {
-    if (oauthError) window.history.replaceState({}, "", "/login");
+    if (oauthError) window.history.replaceState({}, "", "/");
   }, [oauthError]);
 
   // Signed-in visitors skip the pitch. Checked against the API rather than in
-  // the proxy: a stale cookie there would bounce between /login and /overview.
+  // the proxy: a stale cookie there would bounce between / and /overview.
   useEffect(() => {
     checkAuth().then(() => {
       if (useAuthStore.getState().isAuthenticated) router.replace("/overview");
