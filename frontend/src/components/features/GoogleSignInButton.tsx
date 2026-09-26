@@ -26,7 +26,21 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleSignInButton() {
+interface GoogleSignInButtonProps {
+  /** "landing" is the marigold marketing CTA; "default" is the quiet panel button. */
+  variant?: "default" | "landing";
+  label?: string;
+}
+
+const VARIANT_CLASS: Record<NonNullable<GoogleSignInButtonProps["variant"]>, string> = {
+  default: "login-google",
+  landing: "lp-cta",
+};
+
+export function GoogleSignInButton({
+  variant = "default",
+  label = "Continue with Google",
+}: GoogleSignInButtonProps) {
   const initiateOAuth = useAuthStore((s) => s.initiateOAuth);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -51,14 +65,19 @@ export function GoogleSignInButton() {
       onClick={handleClick}
       disabled={isRedirecting}
       aria-busy={isRedirecting}
-      className="login-google"
+      className={VARIANT_CLASS[variant]}
     >
       {isRedirecting ? (
-        <span className="login-google__spinner" aria-hidden="true" />
+        <span className={`${VARIANT_CLASS[variant]}__spinner`} aria-hidden="true" />
+      ) : variant === "landing" ? (
+        // The multicolour G needs a light disc to read on marigold.
+        <span className="lp-cta__icon">
+          <GoogleIcon />
+        </span>
       ) : (
         <GoogleIcon />
       )}
-      {isRedirecting ? "Opening Google…" : "Continue with Google"}
+      {isRedirecting ? "Opening Google…" : label}
     </button>
   );
 }
