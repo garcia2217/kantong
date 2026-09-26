@@ -8,13 +8,30 @@ import { TransactionRow } from "@/src/components/ui/TransactionRow";
 import { transactionService } from "@/src/lib/api/services/transactions";
 import { categoryService } from "@/src/lib/api/services/categories";
 import { TRANSACTION_KEYS, CATEGORY_KEYS } from "@/src/lib/api/keys";
-import { formatTransactionDate } from "@/src/lib/utils/format";
+import { formatIDR, formatTransactionDate } from "@/src/lib/utils/format";
 import type { Transaction, Category } from "@/src/types";
 
 interface DateGroup {
   key: string;
   label: string;
   transactions: Transaction[];
+}
+
+// getAll returns one page from the API; a full page may cut the oldest day short.
+const TRANSACTIONS_PAGE_SIZE = 100;
+
+// Income minus expenses; transfers move money between wallets, so they don't count.
+function netTotal(transactions: Transaction[]): number {
+  return transactions.reduce((sum, transaction) => {
+    if (transaction.type === "income") return sum + transaction.amount;
+    if (transaction.type === "expense") return sum - transaction.amount;
+    return sum;
+  }, 0);
+}
+
+function formatNet(amount: number): string {
+  if (amount === 0) return formatIDR(0);
+  return `${amount > 0 ? "+" : "−"}${formatIDR(Math.abs(amount))}`;
 }
 
 function groupByDate(transactions: Transaction[]): DateGroup[] {
@@ -75,6 +92,7 @@ export default function TransactionsPage() {
     [categories],
   );
   const groups = useMemo(() => groupByDate(transactions ?? []), [transactions]);
+  const lastGroupMayBePartial = (transactions?.length ?? 0) >= TRANSACTIONS_PAGE_SIZE;
 
   return (
     <div className="transactions-page">
@@ -113,29 +131,45 @@ export default function TransactionsPage() {
         </div>
       ) : groups.length === 0 ? (
         <div className="transactions-state">
+          <span className="transactions-state__icon" aria-hidden="true">🧾</span>
           <h2>Your activity starts here</h2>
-          <p>Add your first transaction to keep track of where your money goes.</p>
+          <p>
+            Add your first transaction here, or send the Kantong bot a message like
+            &ldquo;kopi 25rb&rdquo;.
+          </p>
           <button type="button" className="transactions-primary-action btn-primary" onClick={() => setSheetOpen(true)}>
             Add transaction
           </button>
         </div>
       ) : (
         <div className="transactions-groups">
-          {groups.map((group) => (
-            <section key={group.key} aria-label={group.label}>
-              <h2 className="transactions-date">{group.label}</h2>
-              <div className="transactions-list">
-                {group.transactions.map((transaction) => (
-                  <TransactionRow
-                    key={transaction.id}
-                    tx={transaction}
-                    category={transaction.category_id ? categoryMap[transaction.category_id] : undefined}
-                    onEdit={() => setSelectedTx(transaction)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
+          {groups.map((group, index) => {
+              const showTotal = !(lastGroupMayBePartial && index === groups.length - 1);
+              const net = netTotal(group.transactions);
+              return (
+              <section key={group.key} aria-label={group.label}>
+                <div className="transactions-date-row">
+                  <h2 className="transactions-date">{group.label}</h2>
+                  {showTotal && (
+                    <p className={`transactions-day-total ${net < 0 ? "transactions-day-total--out" : net > 0 ? "transactions-day-total--in" : ""}`}>
+                      <span className="sr-only">Net for the day: </span>
+                      {formatNet(net)}
+                    </p>
+                  )}
+                </div>
+                <div className="transactions-list">
+                  {group.transactions.map((transaction) => (
+                    <TransactionRow
+                      key={transaction.id}
+                      tx={transaction}
+                      category={transaction.category_id ? categoryMap[transaction.category_id] : undefined}
+                      onEdit={() => setSelectedTx(transaction)}
+                    />
+                  ))}
+                </div>
+              </section>
+              );
+          })}
         </div>
       )}
     </div>

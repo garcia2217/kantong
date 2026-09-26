@@ -38,9 +38,7 @@ export function TransactionRow({ tx, category, onEdit }: TransactionRowProps) {
     ? (CATEGORY_EMOJI[category.name] ?? "•")
     : isTransfer ? "⇄" : "•";
   const amountPrefix = isIncome ? "+" : isTransfer ? "" : "−";
-  const amountColor = isIncome
-    ? "var(--color-positive)"
-    : isTransfer ? "var(--color-text-secondary)" : "var(--color-negative)";
+  const amountTone = isIncome ? "in" : isTransfer ? "transfer" : "out";
 
   return (
     <button
@@ -56,7 +54,7 @@ export function TransactionRow({ tx, category, onEdit }: TransactionRowProps) {
           {category?.name ?? (isTransfer ? "Transfer" : "Uncategorized")} · {formatTime(tx.transaction_date)}
         </span>
       </span>
-      <span className="tx-row__amount" style={{ color: amountColor }}>
+      <span className={`tx-row__amount tx-row__amount--${amountTone}`}>
         {amountPrefix}{formatIDR(tx.amount)}
       </span>
       <span className="tx-row__chevron" aria-hidden="true">›</span>
