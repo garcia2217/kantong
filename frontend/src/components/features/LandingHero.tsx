@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GoogleSignInButton } from "@/src/components/features/GoogleSignInButton";
+import { LandingPhone } from "@/src/components/features/LandingPhone";
 
 // Friction removers shown under the CTA; each answers a reason not to click.
 const REASSURANCES = ["Free to use", "No bank login", "Ready in under a minute"] as const;
@@ -49,6 +50,8 @@ export function LandingHero() {
             </ul>
           </div>
         </div>
+
+        <LandingPhone />
       </div>
     </header>
   );
