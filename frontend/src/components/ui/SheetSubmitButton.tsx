@@ -9,18 +9,7 @@ export function SheetSubmitButton({ isPending, label, pendingLabel }: SheetSubmi
     <button
       type="submit"
       disabled={isPending}
-      style={{
-        width: "100%",
-        minHeight: 44,
-        background: "var(--color-accent)",
-        color: "var(--color-accent-fg)",
-        border: "none",
-        borderRadius: "var(--radius-md)",
-        fontSize: "var(--text-base)",
-        fontWeight: "var(--weight-medium)",
-        cursor: isPending ? "not-allowed" : "pointer",
-        opacity: isPending ? 0.7 : 1,
-      }}
+      className="btn-primary w-full"
     >
       {isPending ? pendingLabel : label}
     </button>

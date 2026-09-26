@@ -92,7 +92,7 @@ function OpenBottomSheet({ onClose, title, children }: Omit<BottomSheetProps, "i
   return (
     <div
       className="fixed inset-0 z-[200] flex flex-col justify-end md:items-center md:justify-center"
-      style={{ background: "rgba(0, 0, 0, 0.4)" }}
+      style={{ background: "var(--color-overlay)" }}
       onClick={(event) => {
         if (event.target === event.currentTarget) requestClose();
       }}
@@ -118,7 +118,7 @@ function OpenBottomSheet({ onClose, title, children }: Omit<BottomSheetProps, "i
             borderColor: "var(--color-border)",
           }}
         >
-          <h2 id={titleId} style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-semibold)", color: "var(--color-text-primary)" }}>
+          <h2 id={titleId} style={{ fontFamily: "var(--font-heading)", fontSize: "var(--text-xl)", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--color-text-primary)" }}>
             {title}
           </h2>
           <button

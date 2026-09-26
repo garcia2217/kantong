@@ -31,7 +31,7 @@ export function StatCard({
         border: "1px solid var(--color-border)",
         borderRadius: "var(--radius-lg)",
         padding: "var(--space-4) var(--space-5)",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.05)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       {/* Icon + label row */}

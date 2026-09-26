@@ -123,10 +123,15 @@
   --space-12: 48px;
 
   /* Border Radius */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgb(15 42 34 / 0.05), 0 8px 24px -12px rgb(15 42 34 / 0.14);
+  --color-overlay: rgb(10 28 22 / 0.55);
 
   /* Breakpoints */
   --bp-sm: 640px;
@@ -162,6 +167,8 @@
 
     --color-accent: var(--brand-marigold-400);
     --color-accent-fg: var(--brand-marigold-ink);
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
 
     --color-nav-bg: var(--brand-forest-950);
     --color-nav-hover: var(--brand-night-800);
@@ -375,6 +382,46 @@ body {
 
 .app-tab[aria-current="page"] .app-tab__label { font-weight: var(--weight-semibold); }
 
+/* Page titles use the display face, as on the landing page. */
+.app-main h1 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* The one main action on a screen: marigold pill. */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+:is(.btn-primary, .transactions-add, .transactions-primary-action, .budget-add, .debts-add):hover:not(:disabled) {
+  border-color: var(--color-primary-hover);
+  background: var(--color-primary-hover);
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 /* Unlayered, so this beats Tailwind's md:hidden; hide the tab bar here. */
 @media (min-width: 768px) {
   .app-main {
@@ -430,9 +477,11 @@ body {
 
 .transactions-add,
 .transactions-primary-action {
-  border: 1px solid var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-accent-fg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+  font-weight: var(--weight-semibold);
 }
 
 .transactions-add {
@@ -667,12 +716,12 @@ body {
   gap: var(--space-2);
   min-height: 44px;
   padding: 0 var(--space-4);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-md);
-  background: var(--color-accent);
-  color: var(--color-accent-fg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
   font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
 }
 
@@ -930,12 +979,12 @@ body {
   flex-shrink: 0;
   min-height: 44px;
   padding: 0 var(--space-4);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-md);
-  background: var(--color-accent);
-  color: var(--color-accent-fg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
   font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
 }
 
