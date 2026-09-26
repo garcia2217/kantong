@@ -6,7 +6,6 @@ import { LandingFeatures } from "@/src/components/features/LandingFeatures";
 import { LandingProblem } from "@/src/components/features/LandingProblem";
 import { LandingStickyCta } from "@/src/components/features/LandingStickyCta";
 import { LandingTryIt } from "@/src/components/features/LandingTryIt";
-import { displayFont } from "@/src/lib/fonts";
 import "./landing.css";
 
 export const metadata: Metadata = {
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className={`landing ${displayFont.variable}`}>
+    <div className="landing">
       <LandingHero />
 
       <main>

@@ -1,5 +1,43 @@
 @import "tailwindcss";
 
+/* ─── Brand Primitives ───────────────────────────────────────────────────── */
+/* Raw Kantong colours, shared by the app and the landing page. Components
+   never use these directly; they go through the semantic tokens below. */
+:root {
+  --brand-forest-950: #0a1c16;
+  --brand-forest-900: #0f2a22;
+  --brand-forest-800: #173a2f;
+  --brand-forest-700: #2b4a3f;
+  --brand-ivory: #f4efe3;
+  --brand-sage: #b9c4bc;
+
+  --brand-cream-50: #fbf7ef;
+  --brand-cream-100: #f3ecdd;
+  --brand-cream-200: #e6ddcb;
+  --brand-cream-300: #a39679;
+  --brand-ink: #1b2a24;
+  --brand-ink-muted: #56625b;
+  --brand-ink-soft: #69746d;
+
+  --brand-night-900: #11201b;
+  --brand-night-800: #172a23;
+  --brand-night-700: #1b2f28;
+  --brand-night-600: #24392f;
+  --brand-night-500: #2a4038;
+  --brand-night-400: #4d6a5e;
+  --brand-night-text: #ede8dc;
+  --brand-night-muted: #a9b5ad;
+
+  --brand-marigold-400: #f2a93b;
+  --brand-marigold-500: #e8982a;
+  --brand-marigold-ink: #2a1a04;
+
+  --brand-green-600: #1e7a57;
+  --brand-green-300: #7fd1a8;
+  --brand-terracotta-600: #b24a32;
+  --brand-terracotta-300: #f0a08a;
+}
+
 /* ─── Design Tokens ──────────────────────────────────────────────────────── */
 /* One palette for the whole app. Components use only these semantic tokens,
    so a colour change happens here and nowhere else. */
@@ -7,40 +45,48 @@
   color-scheme: light;
 
   /* Backgrounds */
-  --color-bg-app: #fafbf7;
-  --color-bg-sidebar: #f0f4ee;
+  --color-bg-app: var(--brand-cream-50);
+  --color-bg-sidebar: var(--brand-cream-100);
   --color-bg-elevated: #ffffff;
-  --color-bg-subtle: #f0f4ee;
-  --color-bg-hover: #e8eee7;
-  --color-bg-active: #dce9de;
+  --color-bg-subtle: var(--brand-cream-100);
+  --color-bg-hover: #efe7d6;
+  --color-bg-active: #e9dfca;
 
   /* Borders */
-  --color-border: #dce5db;
-  --color-border-strong: #98ab9d;
+  --color-border: var(--brand-cream-200);
+  --color-border-strong: var(--brand-cream-300);
 
   /* Text */
-  --color-text-primary: #20342c;
-  --color-text-secondary: #56665c;
-  --color-text-tertiary: #64746a;
+  --color-text-primary: var(--brand-ink);
+  --color-text-secondary: var(--brand-ink-muted);
+  --color-text-tertiary: var(--brand-ink-soft);
 
   /* Semantic */
-  --color-positive: #176b50;
-  --color-positive-bg: #e4f1e8;
-  --color-negative: #b14036;
-  --color-negative-bg: #fbece8;
+  --color-positive: var(--brand-green-600);
+  --color-positive-bg: #e3f1e8;
+  --color-negative: var(--brand-terracotta-600);
+  --color-negative-bg: #fbe9e3;
   --color-warning: #8a6100;
-  --color-warning-bg: #fff3cd;
-  --color-tag-bg: #e8eee7;
-  --color-tag-text: #445a4b;
+  --color-warning-bg: #fdf0d2;
+  --color-tag-bg: var(--brand-cream-100);
+  --color-tag-text: #4c5a52;
 
-  /* Interactive accent */
-  --color-accent: #2f5a86;
-  --color-accent-fg: #ffffff;
+  /* Interactive accent: focus rings, links, selected states. */
+  --color-accent: var(--brand-forest-900);
+  --color-accent-fg: var(--brand-cream-50);
+
+  /* Primary action: the one button per screen that matters most. */
+  --color-primary: var(--brand-marigold-400);
+  --color-primary-hover: var(--brand-marigold-500);
+  --color-primary-fg: var(--brand-marigold-ink);
 
   /* Chart categories */
   --color-category-food: #b38352;
   --color-category-transport: #6b7a89;
   --color-category-shopping: #7d5ba6;
+
+  /* Display face for page titles and headline numbers. */
+  --font-heading: var(--font-display), var(--font-sans);
 
   /* Typography */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
@@ -85,31 +131,31 @@
   :root {
     color-scheme: dark;
 
-    --color-bg-app: #2f3439;
-    --color-bg-sidebar: #343b40;
-    --color-bg-elevated: #394147;
-    --color-bg-subtle: #454f54;
-    --color-bg-hover: #4b565b;
-    --color-bg-active: #536168;
+    --color-bg-app: var(--brand-night-900);
+    --color-bg-sidebar: var(--brand-forest-950);
+    --color-bg-elevated: var(--brand-night-800);
+    --color-bg-subtle: var(--brand-night-700);
+    --color-bg-hover: var(--brand-night-600);
+    --color-bg-active: var(--brand-night-500);
 
-    --color-border: #647177;
-    --color-border-strong: #8c9a9f;
+    --color-border: var(--brand-night-500);
+    --color-border-strong: var(--brand-night-400);
 
-    --color-text-primary: #f2f5f2;
-    --color-text-secondary: #c7d0d1;
-    --color-text-tertiary: #96a29d;
+    --color-text-primary: var(--brand-night-text);
+    --color-text-secondary: var(--brand-night-muted);
+    --color-text-tertiary: #8e9b93;
 
-    --color-positive: #9bcfaf;
-    --color-positive-bg: #355446;
-    --color-negative: #eaa69b;
-    --color-negative-bg: #593e40;
+    --color-positive: var(--brand-green-300);
+    --color-positive-bg: #173b2c;
+    --color-negative: var(--brand-terracotta-300);
+    --color-negative-bg: #3f2219;
     --color-warning: #e8c789;
-    --color-warning-bg: #474239;
-    --color-tag-bg: #4b565b;
-    --color-tag-text: #e0e8e5;
+    --color-warning-bg: #3a3120;
+    --color-tag-bg: var(--brand-night-600);
+    --color-tag-text: #d5dcd6;
 
-    --color-accent: #8fb8e0;
-    --color-accent-fg: #1a2733;
+    --color-accent: var(--brand-marigold-400);
+    --color-accent-fg: var(--brand-marigold-ink);
 
     --color-category-food: #e0ad74;
     --color-category-transport: #9fb0bd;
