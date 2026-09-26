@@ -46,7 +46,6 @@
 
   /* Backgrounds */
   --color-bg-app: var(--brand-cream-50);
-  --color-bg-sidebar: var(--brand-cream-100);
   --color-bg-elevated: #ffffff;
   --color-bg-subtle: var(--brand-cream-100);
   --color-bg-hover: #efe7d6;
@@ -70,6 +69,14 @@
   --color-warning-bg: #fdf0d2;
   --color-tag-bg: var(--brand-cream-100);
   --color-tag-text: #4c5a52;
+
+  /* Navigation chrome: forest ink in both themes, like the landing hero. */
+  --color-nav-bg: var(--brand-forest-900);
+  --color-nav-fg: var(--brand-ivory);
+  --color-nav-muted: var(--brand-sage);
+  --color-nav-hover: var(--brand-forest-800);
+  --color-nav-border: var(--brand-forest-700);
+  --color-nav-indicator: var(--brand-marigold-400);
 
   /* Interactive accent: focus rings, links, selected states. */
   --color-accent: var(--brand-forest-900);
@@ -132,7 +139,6 @@
     color-scheme: dark;
 
     --color-bg-app: var(--brand-night-900);
-    --color-bg-sidebar: var(--brand-forest-950);
     --color-bg-elevated: var(--brand-night-800);
     --color-bg-subtle: var(--brand-night-700);
     --color-bg-hover: var(--brand-night-600);
@@ -156,6 +162,10 @@
 
     --color-accent: var(--brand-marigold-400);
     --color-accent-fg: var(--brand-marigold-ink);
+
+    --color-nav-bg: var(--brand-forest-950);
+    --color-nav-hover: var(--brand-night-800);
+    --color-nav-border: var(--brand-night-600);
 
     --color-category-food: #e0ad74;
     --color-category-transport: #9fb0bd;
@@ -214,12 +224,168 @@ body {
   background: var(--color-bg-hover);
 }
 
-.tab-item:active {
-  opacity: 0.6;
+/* ─── App Shell ──────────────────────────────────────────────────────────── */
+.app-main {
+  padding-bottom: calc(var(--space-4) + 64px + env(safe-area-inset-bottom));
 }
 
-.nav-item:hover {
-  background: var(--color-bg-hover);
+.app-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  flex-direction: column;
+  width: 224px;
+  padding: var(--space-5) var(--space-3);
+  overflow-y: auto;
+  background: var(--color-nav-bg);
+  color: var(--color-nav-fg);
+}
+
+.app-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  margin-bottom: var(--space-6);
+  padding: 0 var(--space-2);
+  color: var(--color-nav-fg);
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.kantong-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--brand-marigold-400);
+  color: var(--brand-marigold-ink);
+}
+
+.app-sidebar__nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.app-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-nav-muted);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.app-nav-link:hover {
+  background: var(--color-nav-hover);
+  color: var(--color-nav-fg);
+}
+
+.app-nav-link[aria-current="page"] {
+  background: var(--color-nav-hover);
+  color: var(--color-nav-fg);
+  font-weight: var(--weight-semibold);
+}
+
+/* Marigold bar marks the current page; shape, not just colour, carries it. */
+.app-nav-link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-nav-indicator);
+}
+
+.app-nav-link[aria-current="page"] svg { color: var(--color-nav-indicator); }
+
+.app-sidebar__logout { font-size: 14px; }
+
+:is(.app-nav-link, .app-sidebar__brand, .app-tab):focus-visible {
+  outline: 2px solid var(--color-nav-indicator);
+  outline-offset: -2px;
+}
+
+.app-tabbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  padding: var(--space-1) var(--space-1) env(safe-area-inset-bottom);
+  background: var(--color-nav-bg);
+  border-top: 1px solid var(--color-nav-border);
+}
+
+.app-tab {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 44px;
+  min-height: 56px;
+  color: var(--color-nav-muted);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-tab:active { opacity: 0.7; }
+
+.app-tab[aria-current="page"] { color: var(--color-nav-indicator); }
+
+.app-tab[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 24px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--color-nav-indicator);
+}
+
+.app-tab__label {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.app-tab[aria-current="page"] .app-tab__label { font-weight: var(--weight-semibold); }
+
+/* Unlayered, so this beats Tailwind's md:hidden; hide the tab bar here. */
+@media (min-width: 768px) {
+  .app-main {
+    margin-left: 224px;
+    padding-bottom: var(--space-8);
+  }
+  .app-tabbar { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-nav-link { transition: none; }
 }
 
 /* Transactions */

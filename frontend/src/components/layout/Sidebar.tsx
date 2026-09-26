@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/src/store/auth";
+import { KantongMark } from "@/src/components/ui/KantongMark";
 
 // ─── Icon Components ──────────────────────────────────────────────────────────
 
@@ -145,99 +146,31 @@ export function Sidebar() {
   };
 
   return (
-    <aside
-      className="hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex md:w-40 md:flex-col md:overflow-y-auto"
-      style={{
-        flexShrink: 0,
-        background: "var(--color-bg-sidebar)",
-        borderRight: "0.5px solid var(--color-border)",
-        padding: "var(--space-4) var(--space-3)",
-      }}
-    >
-      {/* App name */}
-      <div
-        style={{
-          padding: "var(--space-1) var(--space-2)",
-          marginBottom: "var(--space-6)",
-        }}
-      >
-        <p
-          style={{
-            fontSize: "var(--text-sm)",
-            fontWeight: "var(--weight-semibold)",
-            color: "var(--color-text-primary)",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          Finance Tracker
-        </p>
-      </div>
+    <aside className="app-sidebar hidden md:flex">
+      <Link href="/overview" className="app-sidebar__brand">
+        <KantongMark />
+        Kantong
+      </Link>
 
-      {/* Nav items */}
-      <nav
-        role="navigation"
-        aria-label="Main navigation"
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--space-1)",
-        }}
-      >
+      <nav aria-label="Main navigation" className="app-sidebar__nav">
         {NAV_ITEMS.map(({ href, label, Icon }) => {
           const isActive = pathname === href || pathname.startsWith(`${href}/`);
           return (
-            <Link key={href} href={href} style={{ textDecoration: "none" }}>
-              <div
-                className="nav-item"
-                role="menuitem"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--space-2)",
-                  padding: "var(--space-1) var(--space-2)",
-                  borderRadius: "var(--radius-md)",
-                  fontSize: "var(--text-sm)",
-                  color: isActive
-                    ? "var(--color-text-primary)"
-                    : "var(--color-text-secondary)",
-                  fontWeight: isActive
-                    ? "var(--weight-medium)"
-                    : "var(--weight-normal)",
-                  background: isActive ? "var(--color-bg-active)" : "transparent",
-                  cursor: "pointer",
-                  minHeight: 32,
-                  transition: "background 0.1s ease, color 0.1s ease",
-                }}
-              >
-                <Icon size={16} />
-                {label}
-              </div>
+            <Link
+              key={href}
+              href={href}
+              className="app-nav-link"
+              aria-current={isActive ? "page" : undefined}
+            >
+              <Icon size={18} />
+              {label}
             </Link>
           );
         })}
       </nav>
 
-      {/* Logout */}
-      <button
-        onClick={handleLogout}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "var(--space-2)",
-          padding: "var(--space-1) var(--space-2)",
-          borderRadius: "var(--radius-md)",
-          fontSize: "var(--text-sm)",
-          color: "var(--color-text-tertiary)",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          width: "100%",
-          textAlign: "left",
-          minHeight: 32,
-        }}
-      >
-        <IconLogout size={16} />
+      <button type="button" onClick={handleLogout} className="app-nav-link app-sidebar__logout">
+        <IconLogout size={18} />
         Log out
       </button>
     </aside>

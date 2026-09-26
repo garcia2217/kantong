@@ -79,7 +79,7 @@ export default function DashboardLayout({
 
                 {/* Main content area */}
                 <main
-                    className="flex-1 min-w-0 p-4 pb-[calc(56px+env(safe-area-inset-bottom))] md:ml-40 md:p-8"
+                    className="app-main flex-1 min-w-0 p-4 md:p-8"
                 >
                     {children}
                 </main>
