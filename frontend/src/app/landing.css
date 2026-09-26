@@ -1,0 +1,157 @@
+/* ─── Landing: tokens ────────────────────────────────────────────────────── */
+/* Forest ink and warm cream, with marigold reserved for the sign-in action so
+   it is the one thing on the page that stands out. */
+.landing {
+  --lp-ink: #0f2a22;
+  --lp-ink-raised: #173a2f;
+  --lp-ink-line: #2b4a3f;
+  --lp-on-ink: #f4efe3;
+  --lp-on-ink-muted: #b9c4bc;
+
+  --lp-cream: #fbf7ef;
+  --lp-cream-deep: #f3ecdd;
+  --lp-paper: #ffffff;
+  --lp-line: #e6ddcb;
+  --lp-text: #1b2a24;
+  --lp-text-muted: #56625b;
+
+  --lp-marigold: #f2a93b;
+  --lp-marigold-hover: #e8982a;
+  --lp-on-marigold: #2a1a04;
+
+  --lp-money-in: #1e7a57;
+  --lp-money-out: #b24a32;
+
+  --lp-radius: 20px;
+  --lp-shadow: 0 1px 2px rgb(15 42 34 / 0.06), 0 12px 32px -12px rgb(15 42 34 / 0.18);
+
+  color-scheme: light;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--lp-cream);
+  color: var(--lp-text);
+  font-size: 16px;
+  line-height: var(--leading-normal);
+}
+
+@media (prefers-color-scheme: dark) {
+  .landing {
+    --lp-ink: #0a1c16;
+    --lp-ink-raised: #12291f;
+    --lp-ink-line: #24403a;
+
+    --lp-cream: #11201b;
+    --lp-cream-deep: #172a23;
+    --lp-paper: #1b2f28;
+    --lp-line: #2a4038;
+    --lp-text: #ede8dc;
+    --lp-text-muted: #a9b5ad;
+
+    --lp-money-in: #7fd1a8;
+    --lp-money-out: #f0a08a;
+
+    --lp-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -12px rgb(0 0 0 / 0.5);
+
+    color-scheme: dark;
+  }
+}
+
+/* ─── Landing: shared primitives ─────────────────────────────────────────── */
+.lp-container {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.lp-display {
+  font-family: var(--font-display), var(--font-sans);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.lp-eyebrow {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lp-money-in);
+}
+
+.lp-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 52px;
+  padding: 0 var(--space-6);
+  border: none;
+  border-radius: 999px;
+  background: var(--lp-marigold);
+  color: var(--lp-on-marigold);
+  font-size: 16px;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  box-shadow: 0 8px 24px -8px rgb(242 169 59 / 0.6);
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.lp-cta:hover:not(:disabled) {
+  background: var(--lp-marigold-hover);
+  transform: translateY(-1px);
+}
+
+.lp-cta:active:not(:disabled) { transform: translateY(0); }
+
+.lp-cta:disabled {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+.lp-cta:focus-visible {
+  outline: 3px solid var(--lp-marigold);
+  outline-offset: 3px;
+}
+
+.lp-cta__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: login-spin 700ms linear infinite;
+}
+
+/* Friction removers sit right under every CTA. */
+.lp-reassure {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1) var(--space-3);
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: inherit;
+  opacity: 0.8;
+}
+
+.lp-reassure li::before {
+  content: "✓ ";
+  color: var(--lp-money-in);
+  font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 640px) {
+  .lp-container { padding: 0 var(--space-6); }
+  .lp-cta { width: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-cta { transition: none; }
+  .lp-cta:hover:not(:disabled) { transform: none; }
+}
