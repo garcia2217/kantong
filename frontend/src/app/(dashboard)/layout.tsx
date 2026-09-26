@@ -33,7 +33,7 @@ export default function DashboardLayout({
     // Registered before checkAuth so the listener is in place for any auth call.
     // TODO: remove once auth moves to httpOnly cookies + Next.js middleware.
     useEffect(() => {
-        const handleUnauthorized = () => router.replace("/login");
+        const handleUnauthorized = () => router.replace("/");
         window.addEventListener("auth:unauthorized", handleUnauthorized);
         return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
     }, [router]);
@@ -44,7 +44,7 @@ export default function DashboardLayout({
 
     useEffect(() => {
         if (!isChecking && !isAuthenticated) {
-            router.replace("/login");
+            router.replace("/");
         }
     }, [isChecking, isAuthenticated, router]);
 

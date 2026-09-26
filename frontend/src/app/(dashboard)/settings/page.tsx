@@ -158,7 +158,7 @@ export default function SettingsPage() {
 
     const handleLogout = () => {
         logout();
-        router.push("/login");
+        router.push("/");
     };
 
     const incomeCategories = categories.filter((c) => c.type === "income");
