@@ -68,40 +68,14 @@ function dueInfo(dueDate: string | null, today: Date) {
 
 // ─── Status badge ──────────────────────────────────────────────────────────────
 
+const STATUS_LABEL: Record<Debt["status"], string> = {
+  pending: "Pending",
+  partial: "Partly paid",
+  settled: "Settled",
+};
+
 function StatusBadge({ status }: { status: Debt["status"] }) {
-  const styles: Record<Debt["status"], { color: string; bg: string; label: string }> = {
-    pending: {
-      color: "var(--color-text-secondary)",
-      bg: "var(--color-tag-bg)",
-      label: "Pending",
-    },
-    partial: {
-      color: "#B45309",
-      bg: "#FEF3C7",
-      label: "Partial",
-    },
-    settled: {
-      color: "var(--color-positive)",
-      bg: "var(--color-positive-bg)",
-      label: "Settled",
-    },
-  };
-  const s = styles[status];
-  return (
-    <span
-      style={{
-        fontSize: "var(--text-xs)",
-        fontWeight: "var(--weight-medium)",
-        color: s.color,
-        background: s.bg,
-        padding: "1px 6px",
-        borderRadius: "var(--radius-full)",
-        flexShrink: 0,
-      }}
-    >
-      {s.label}
-    </span>
-  );
+  return <span className={`debt-badge debt-badge--${status}`}>{STATUS_LABEL[status]}</span>;
 }
 
 // ─── Debt row ──────────────────────────────────────────────────────────────────
@@ -120,42 +94,24 @@ function DebtRow({ debt, onDetails, onSettle }: DebtRowProps) {
 
   return (
     <div className="debt-row">
-      {/* Content */}
+      <span className={`debt-row-avatar debt-row-avatar--${isSettled ? "settled" : debt.type}`} aria-hidden="true">
+        {personName.trim().charAt(0).toUpperCase() || "?"}
+      </span>
       <button
         type="button"
         className="debt-row-open"
         onClick={onDetails}
         aria-label={`View debt with ${personName}`}
       >
-        {/* Name + badge */}
-        <span
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--space-2)",
-            flexWrap: "wrap",
-            marginBottom: 2,
-          }}
-        >
-          <span
-            style={{
-              fontSize: "var(--text-base)",
-              fontWeight: "var(--weight-medium)",
-              color: "var(--color-text-primary)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {personName}
-          </span>
-          {isSettled && (
-            <span className="debt-row-direction">
-              {debt.type === "receivable" ? "They owed me" : "I owed them"}
-            </span>
-          )}
+        <span className="debt-row-name-line">
+          <span className="debt-row-name">{personName}</span>
           <StatusBadge status={debt.status} />
         </span>
+        {isSettled && (
+          <span className="debt-row-direction">
+            {debt.type === "receivable" ? "They owed me" : "I owed them"}
+          </span>
+        )}
 
         <span className="debt-row-amount">
           {isSettled ? `${formatIDR(debt.amount)} paid` : `${formatIDR(outstanding)} remaining`}
@@ -204,75 +160,26 @@ interface SectionCardProps {
 }
 
 function SectionCard({ title, pageData, isLoading, isError, onRetry, onPageChange, emptyMessage, children }: SectionCardProps) {
-  const divider: React.CSSProperties = {
-    margin: "0 var(--space-4)",
-    height: "0.5px",
-    background: "var(--color-border)",
-  };
+  const headingId = `debts-${title.toLowerCase().replace(/\s+/g, "-")}`;
+  const totalPages = pageData ? Math.max(1, Math.ceil(pageData.total / pageData.page_size)) : 1;
 
   return (
-    <div
-      style={{
-        background: "var(--color-bg-elevated)",
-        border: "0.5px solid var(--color-border)",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "var(--space-3) var(--space-4)",
-          borderBottom: "0.5px solid var(--color-border)",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "var(--text-base)",
-            fontWeight: "var(--weight-semibold)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          {title}
-        </h2>
-        <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-tertiary)" }}>
+    <section aria-labelledby={headingId} className="debts-card">
+      <div className="debts-card__head">
+        <h2 id={headingId} className="debts-card__title">{title}</h2>
+        <span className="debts-card__meta">
           {isLoading ? "…" : isError && !pageData ? "—" : `${pageData?.total ?? 0} item${pageData?.total !== 1 ? "s" : ""}`}
         </span>
       </div>
 
-      {/* Rows */}
       {isLoading ? (
         [0, 1].map((i) => (
-          <div key={i}>
-            {i > 0 && <div style={divider} />}
-            <div
-              style={{
-                padding: "var(--space-4)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--space-2)",
-              }}
-            >
-              <div
-                style={{
-                  height: 16,
-                  width: "35%",
-                  background: "var(--color-bg-subtle)",
-                  borderRadius: "var(--radius-sm)",
-                }}
-              />
-              <div
-                style={{
-                  height: 12,
-                  width: "55%",
-                  background: "var(--color-bg-subtle)",
-                  borderRadius: "var(--radius-sm)",
-                }}
-              />
-            </div>
+          <div key={i} className="debt-row debt-row--skeleton" aria-hidden="true">
+            <span className="debt-skeleton debt-skeleton--avatar" />
+            <span className="debt-skeleton-lines">
+              <span className="debt-skeleton debt-skeleton--name" />
+              <span className="debt-skeleton debt-skeleton--amount" />
+            </span>
           </div>
         ))
       ) : isError ? (
@@ -281,14 +188,7 @@ function SectionCard({ title, pageData, isLoading, isError, onRetry, onPageChang
           <button type="button" onClick={onRetry}>Try again</button>
         </div>
       ) : !pageData?.items.length ? (
-        <p
-          style={{
-            padding: "var(--space-6) var(--space-4)",
-            textAlign: "center",
-            fontSize: "var(--text-sm)",
-            color: "var(--color-text-tertiary)",
-          }}
-        >
+        <p className="debts-card__empty">
           {pageData?.total ? "No debts on this page. Go to the previous page." : emptyMessage}
         </p>
       ) : (
@@ -299,18 +199,25 @@ function SectionCard({ title, pageData, isLoading, isError, onRetry, onPageChang
           <button type="button" disabled={pageData.page <= 1} onClick={() => onPageChange(pageData.page - 1)}>
             Previous
           </button>
-          <span>Page {pageData.page} of {Math.max(1, Math.ceil(pageData.total / pageData.page_size))}</span>
+          <span>Page {pageData.page} of {totalPages}</span>
           <button
             type="button"
-            disabled={pageData.page >= Math.ceil(pageData.total / pageData.page_size)}
+            disabled={pageData.page >= totalPages}
             onClick={() => onPageChange(pageData.page + 1)}
           >
             Next
           </button>
         </div>
       )}
-    </div>
+    </section>
   );
+}
+
+// Net position headline: one sentence that answers "am I up or down?".
+function netHeadline(receivable: number, payable: number): { label: string; tone: "in" | "out" | "even" } {
+  if (receivable > payable) return { label: "Others owe you overall", tone: "in" };
+  if (payable > receivable) return { label: "You owe others overall", tone: "out" };
+  return { label: "You're all square", tone: "even" };
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -385,26 +292,20 @@ export default function DebtsPage() {
     }
   };
 
-  const renderRows = (list: DebtBrowseItem[]) => {
-    const divider: React.CSSProperties = {
-      margin: "0 var(--space-4)",
-      height: "0.5px",
-      background: "var(--color-border)",
-    };
-    return list.map((debt, idx) => (
-      <div key={debt.id}>
-        {idx > 0 && <div style={divider} />}
-        <DebtRow
-          debt={debt}
-          onDetails={() => {
-            deleteDebt.reset();
-            setDetailDebt(debt);
-          }}
-          onSettle={() => setSettleDebt(debt)}
-        />
-      </div>
+  const net = netPosition ? netHeadline(netPosition.totalReceivable, netPosition.totalPayable) : null;
+
+  const renderRows = (list: DebtBrowseItem[]) =>
+    list.map((debt) => (
+      <DebtRow
+        key={debt.id}
+        debt={debt}
+        onDetails={() => {
+          deleteDebt.reset();
+          setDetailDebt(debt);
+        }}
+        onSettle={() => setSettleDebt(debt)}
+      />
     ));
-  };
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -436,45 +337,41 @@ export default function DebtsPage() {
 
         <div className="debts-content">
           {notice && (
-            <div
-              role="status"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "var(--space-3)",
-                padding: "var(--space-3) var(--space-4)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "var(--radius-md)",
-                background: "var(--color-positive-bg)",
-                color: "var(--color-text-primary)",
-              }}
-            >
-              <span>{notice}</span>
-              <button
-                type="button"
-                onClick={() => setNotice(null)}
-                aria-label="Dismiss notification"
-                style={{ minHeight: 44, padding: "0 var(--space-2)", color: "var(--color-accent)", cursor: "pointer" }}
-              >
+            <div role="status" className="debts-notice">
+              <span>✓ {notice}</span>
+              <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification">
                 Dismiss
               </button>
             </div>
           )}
-          <div className="debts-summary" aria-label="Outstanding balances">
-            <div className="debts-summary-item">
-              <p>To collect</p>
-              <strong>
-                {netLoading ? "…" : netPosition ? formatIDR(netPosition.totalReceivable) : "Unavailable"}
-              </strong>
-            </div>
-            <div className="debts-summary-item">
-              <p>To pay</p>
-              <strong>
-                {netLoading ? "…" : netPosition ? formatIDR(netPosition.totalPayable) : "Unavailable"}
-              </strong>
-            </div>
-          </div>
+          <section aria-labelledby="debts-net-heading" className="debts-summary">
+            {netLoading ? (
+              <div role="status" aria-label="Loading balances" className="debts-summary__loading">
+                <h2 id="debts-net-heading" className="sr-only">Balances</h2>
+                <span className="debt-skeleton debt-skeleton--label" />
+                <span className="debt-skeleton debt-skeleton--value" />
+              </div>
+            ) : netPosition ? (
+              <>
+                <h2 id="debts-net-heading" className="debts-summary__label">{net?.label}</h2>
+                <p className={`debts-summary__value debts-summary__value--${net?.tone}`}>
+                  {formatIDR(Math.abs(netPosition.totalReceivable - netPosition.totalPayable))}
+                </p>
+              </>
+            ) : (
+              <h2 id="debts-net-heading" className="debts-summary__label">Balances unavailable</h2>
+            )}
+            <dl className="debts-summary__figures">
+              <div>
+                <dt><span aria-hidden="true" className="debts-summary__dot debts-summary__dot--in" />To collect</dt>
+                <dd>{netLoading ? "…" : netPosition ? formatIDR(netPosition.totalReceivable) : "—"}</dd>
+              </div>
+              <div>
+                <dt><span aria-hidden="true" className="debts-summary__dot debts-summary__dot--out" />To pay</dt>
+                <dd>{netLoading ? "…" : netPosition ? formatIDR(netPosition.totalPayable) : "—"}</dd>
+              </div>
+            </dl>
+          </section>
           {netError && (
             <p className="debts-summary-error" role="alert">
               {netPosition ? "Balances could not be refreshed." : "Balances could not be loaded."}{" "}
@@ -486,13 +383,13 @@ export default function DebtsPage() {
 
           <form className="debts-search" role="search" onSubmit={handleSearch}>
             <label htmlFor="debt-search">Find a debt</label>
-            <div>
+            <div className="debts-search__row">
               <input
                 id="debt-search"
                 type="search"
                 value={searchDraft}
                 onChange={(event) => setSearchDraft(event.target.value)}
-                placeholder="Search person or description"
+                placeholder="Person or description"
               />
               <button type="submit">Search</button>
               {search && (
@@ -544,7 +441,7 @@ export default function DebtsPage() {
               onClick={() => setSettledOpen((open) => !open)}
             >
               <span>Settled history</span>
-              <span aria-hidden="true">{settledOpen ? "−" : "+"}</span>
+              <span aria-hidden="true" className="debts-history-toggle__icon">{settledOpen ? "−" : "+"}</span>
             </button>
             {settledOpen && (
               <SectionCard
