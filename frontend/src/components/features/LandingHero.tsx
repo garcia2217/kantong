@@ -1,28 +1,17 @@
 import Link from "next/link";
 import { GoogleSignInButton } from "@/src/components/features/GoogleSignInButton";
 import { LandingPhone } from "@/src/components/features/LandingPhone";
+import { KantongMark } from "@/src/components/ui/KantongMark";
 
 // Friction removers shown under the CTA; each answers a reason not to click.
 const REASSURANCES = ["Free to use", "No bank login", "Ready in under a minute"] as const;
-
-function KantongMark() {
-  return (
-    <span className="lp-nav__mark" aria-hidden="true">
-      <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-        <rect x="2" y="12" width="4" height="8" rx="1" fill="currentColor" opacity="0.55" />
-        <rect x="9" y="7" width="4" height="13" rx="1" fill="currentColor" />
-        <rect x="16" y="2" width="4" height="18" rx="1" fill="currentColor" opacity="0.7" />
-      </svg>
-    </span>
-  );
-}
 
 export function LandingHero() {
   return (
     <header className="lp-hero">
       <nav className="lp-container lp-nav" aria-label="Kantong">
         <Link href="/" className="lp-nav__brand">
-          <KantongMark />
+          <KantongMark className="lp-nav__mark" />
           Kantong
         </Link>
         <Link href="#sign-in" className="lp-nav__signin">
