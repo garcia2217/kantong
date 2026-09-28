@@ -35,33 +35,36 @@ const ChevronRight = () => (
   </svg>
 );
 
-// ─── Progress bar ─────────────────────────────────────────────────────────────
+// ─── Budget meter ─────────────────────────────────────────────────────────────
 
-function ProgressBar({ pct }: { pct: number }) {
-  const barColor =
-    pct > 100 ? "var(--color-negative)" : pct > 80 ? "var(--color-warning)" : "var(--color-positive)";
+type BudgetTone = "ok" | "near" | "over";
+
+// Same colour steps as the Overview meter: calm, nearly spent, over. The
+// figures next to every bar say the same thing, so colour is never the only
+// signal.
+function budgetTone(percentageUsed: number): BudgetTone {
+  if (percentageUsed > 100) return "over";
+  if (percentageUsed >= 80) return "near";
+  return "ok";
+}
+
+function BudgetMeter({ pct }: { pct: number }) {
   return (
-    <div
-      aria-hidden="true"
-      style={{
-        height: 6,
-        background: "var(--color-bg-subtle)",
-        border: "0.5px solid var(--color-border)",
-        borderRadius: 3,
-        overflow: "hidden",
-      }}
-    >
-      <div
-        className="budget-progress-fill"
-        style={{
-          height: "100%",
-          width: `${Math.min(100, pct)}%`,
-          background: barColor,
-          borderRadius: 3,
-        }}
+    <span aria-hidden="true" className="budget-meter">
+      <span
+        className={`budget-meter__fill budget-meter__fill--${budgetTone(pct)}`}
+        style={{ width: `${Math.min(100, pct)}%` }}
       />
-    </div>
+    </span>
   );
+}
+
+// Days left in the viewed month, counting today. Null for any other month,
+// because a daily allowance only makes sense while the month is running.
+function daysLeftInMonth(year: number, month: number, now: Date): number | null {
+  if (now.getFullYear() !== year || now.getMonth() + 1 !== month) return null;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return daysInMonth - now.getDate() + 1;
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -135,11 +138,9 @@ export default function BudgetPage() {
   const takenCategoryIds = budgets.map((b) => b.category_id);
   const hasExpenseCategories = categories.some((category) => category.type === "expense");
 
-  const divider: React.CSSProperties = {
-    margin: "0 var(--space-4)",
-    height: "0.5px",
-    background: "var(--color-border)",
-  };
+  const percentageUsed = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+  const daysLeft = daysLeftInMonth(year, month, new Date());
+  const dailyAllowance = daysLeft && remaining > 0 ? remaining / daysLeft : null;
 
   return (
     <div className="budget-page">
@@ -157,7 +158,6 @@ export default function BudgetPage() {
       </header>
 
       <div className="budget-content">
-        {/* Month navigation */}
         <div className="budget-month-nav">
           <button
             type="button"
@@ -167,15 +167,7 @@ export default function BudgetPage() {
           >
             <ChevronLeft />
           </button>
-          <p
-            style={{
-              fontSize: "var(--text-base)",
-              fontWeight: "var(--weight-semibold)",
-              color: "var(--color-text-primary)",
-            }}
-          >
-            {formatMonthYear(year, month)}
-          </p>
+          <p className="budget-month-label" aria-live="polite">{formatMonthYear(year, month)}</p>
           <button
             type="button"
             className="budget-month-button"
@@ -187,131 +179,92 @@ export default function BudgetPage() {
         </div>
 
         {isError ? (
-          <div role="alert" style={{ padding: "var(--space-6)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", background: "var(--color-bg-elevated)" }}>
-            <h2 style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-semibold)", color: "var(--color-text-primary)" }}>Couldn&apos;t load this month&apos;s budget</h2>
-            <p style={{ marginTop: "var(--space-2)", color: "var(--color-text-secondary)" }}>Check your connection and try again. No totals are shown until the data is complete.</p>
-            <button type="button" onClick={retryLoading} disabled={isRetrying} style={{ minHeight: 44, marginTop: "var(--space-4)", padding: "0 var(--space-4)", border: "1px solid var(--color-border-strong)", borderRadius: "var(--radius-md)", background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", cursor: isRetrying ? "not-allowed" : "pointer" }}>
+          <div role="alert" className="budget-state">
+            <span className="budget-state__icon" aria-hidden="true">⚠️</span>
+            <h2>Couldn&apos;t load this month&apos;s budget</h2>
+            <p>Check your connection and try again. No totals are shown until the data is complete.</p>
+            <button type="button" className="budget-secondary-action" onClick={retryLoading} disabled={isRetrying}>
               {isRetrying ? "Trying again…" : "Try again"}
             </button>
           </div>
         ) : isLoading ? (
-          <section role="status" aria-label="Loading budget summary" style={{ padding: "var(--space-5)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", background: "var(--color-bg-elevated)" }}>
-            <div style={{ width: 150, height: 16, borderRadius: "var(--radius-sm)", background: "var(--color-bg-subtle)" }} />
-            <div style={{ width: 220, maxWidth: "100%", height: 36, marginTop: "var(--space-3)", borderRadius: "var(--radius-sm)", background: "var(--color-bg-subtle)" }} />
-            <div style={{ width: "100%", height: 52, marginTop: "var(--space-5)", borderRadius: "var(--radius-sm)", background: "var(--color-bg-subtle)" }} />
+          <section role="status" aria-label="Loading budget summary" className="budget-summary budget-summary--loading">
+            <span className="budget-skeleton budget-skeleton--label" />
+            <span className="budget-skeleton budget-skeleton--value" />
+            <span className="budget-skeleton budget-skeleton--meter" />
           </section>
         ) : rows.length > 0 ? (
-          <section aria-label="Budget summary" style={{ padding: "var(--space-5)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", background: "var(--color-bg-elevated)" }}>
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>
-              {remaining < 0 ? "Over budget by" : "Budget remaining"}
-            </p>
-            <p style={{ marginTop: "var(--space-1)", fontSize: "var(--text-2xl)", fontWeight: "var(--weight-semibold)", color: remaining < 0 ? "var(--color-negative)" : "var(--color-text-primary)" }}>
+          <section aria-labelledby="budget-summary-heading" className="budget-summary">
+            <h2 id="budget-summary-heading" className="budget-summary__label">
+              {remaining < 0 ? "Over budget by" : "Left to spend"}
+            </h2>
+            <p className={`budget-summary__value${remaining < 0 ? " budget-summary__value--over" : ""}`}>
               {formatIDR(Math.abs(remaining))}
             </p>
-            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2" style={{ marginTop: "var(--space-5)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--color-border)" }}>
+            {dailyAllowance !== null && (
+              <p className="budget-summary__hint">
+                About {formatIDRCompact(dailyAllowance)} a day for the next {daysLeft} {daysLeft === 1 ? "day" : "days"}
+              </p>
+            )}
+            <div
+              role="progressbar"
+              aria-label="Budget used this month"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.min(100, percentageUsed)}
+              aria-valuetext={`${percentageUsed}% used`}
+              className="budget-summary__meter"
+            >
+              <BudgetMeter pct={percentageUsed} />
+            </div>
+            <p className="budget-summary__caption">{percentageUsed}% of your budget used</p>
+            <dl className="budget-summary__figures">
               <div>
-                <dt style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>Total budget</dt>
-                <dd style={{ fontSize: "var(--text-base)", fontWeight: "var(--weight-medium)", color: "var(--color-text-primary)" }}>{formatIDR(totalBudget)}</dd>
+                <dt>Spent in budgeted categories</dt>
+                <dd>{formatIDR(totalSpent)}</dd>
               </div>
               <div>
-                <dt style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>Spent in budgeted categories</dt>
-                <dd style={{ fontSize: "var(--text-base)", fontWeight: "var(--weight-medium)", color: "var(--color-text-primary)" }}>{formatIDR(totalSpent)}</dd>
+                <dt>Total budget</dt>
+                <dd>{formatIDR(totalBudget)}</dd>
               </div>
             </dl>
           </section>
         ) : null}
 
-        {/* Budget breakdown */}
-        {!isError && <section>
-          <div
-            style={{
-              background: "var(--color-bg-elevated)",
-              border: "0.5px solid var(--color-border)",
-              borderRadius: "var(--radius-lg)",
-              overflow: "hidden",
-            }}
-          >
-            {/* Section header */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "var(--space-3) var(--space-4)",
-                borderBottom: "0.5px solid var(--color-border)",
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: "var(--text-base)",
-                  fontWeight: "var(--weight-semibold)",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                Breakdown
-              </h2>
-              <span
-                style={{ fontSize: "var(--text-sm)", color: "var(--color-text-tertiary)" }}
-              >
+        {!isError && (
+          <section aria-labelledby="budget-breakdown-heading" className="budget-card">
+            <div className="budget-card__head">
+              <h2 id="budget-breakdown-heading" className="budget-card__title">Breakdown</h2>
+              <span className="budget-card__meta">
                 {isLoading ? "…" : `${rows.length} ${rows.length === 1 ? "category" : "categories"}`}
               </span>
             </div>
 
-            {/* Budget rows */}
             {isLoading ? (
-              // Skeleton
               [0, 1, 2].map((i) => (
-                <div key={i}>
-                  {i > 0 && <div style={divider} />}
-                  <div
-                    style={{
-                      padding: "var(--space-4)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "var(--space-2)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: 16,
-                        width: "40%",
-                        background: "var(--color-bg-subtle)",
-                        borderRadius: "var(--radius-sm)",
-                      }}
-                    />
-                    <div
-                      style={{
-                        height: 6,
-                        width: "100%",
-                        background: "var(--color-bg-subtle)",
-                        borderRadius: 3,
-                      }}
-                    />
-                    <div
-                      style={{
-                        height: 12,
-                        width: "55%",
-                        background: "var(--color-bg-subtle)",
-                        borderRadius: "var(--radius-sm)",
-                      }}
-                    />
-                  </div>
+                <div key={i} className="budget-row budget-row--skeleton" aria-hidden="true">
+                  <span className="budget-skeleton budget-skeleton--name" />
+                  <span className="budget-skeleton budget-skeleton--bar" />
+                  <span className="budget-skeleton budget-skeleton--figures" />
                 </div>
               ))
             ) : rows.length === 0 ? (
-              <div style={{ padding: "var(--space-8) var(--space-4)", textAlign: "center" }}>
-                <h3 style={{ fontSize: "var(--text-lg)", fontWeight: "var(--weight-semibold)", color: "var(--color-text-primary)" }}>
+              <div className="budget-empty">
+                <span className="budget-state__icon" aria-hidden="true">🎯</span>
+                <h3>
                   {hasExpenseCategories ? `No budgets for ${formatMonthYear(year, month)}` : "No expense categories yet"}
                 </h3>
-                <p style={{ margin: "var(--space-2) auto var(--space-4)", fontSize: "var(--text-base)", color: "var(--color-text-secondary)" }}>
-                  {hasExpenseCategories ? "Set a limit for a category to track its spending here." : "Create an expense category before setting a budget."}
+                <p>
+                  {hasExpenseCategories
+                    ? "Give a category a monthly limit and Kantong shows what's left before you spend."
+                    : "Create an expense category before setting a budget."}
                 </p>
                 {hasExpenseCategories ? (
-                  <button type="button" onClick={() => setSheet({ open: true })} style={{ minHeight: 44, padding: "0 var(--space-4)", border: "none", borderRadius: "var(--radius-md)", background: "var(--color-accent)", color: "var(--color-accent-fg)", fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)", cursor: "pointer" }}>
+                  <button type="button" className="btn-primary budget-empty__action" onClick={() => setSheet({ open: true })}>
                     Add budget
                   </button>
                 ) : (
-                  <Link href="/settings" style={{ display: "inline-flex", alignItems: "center", minHeight: 44, padding: "0 var(--space-4)", borderRadius: "var(--radius-md)", background: "var(--color-accent)", color: "var(--color-accent-fg)", fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)", textDecoration: "none" }}>
+                  <Link href="/settings" className="btn-primary budget-empty__action">
                     Manage categories
                   </Link>
                 )}
@@ -339,14 +292,14 @@ export default function BudgetPage() {
                           {budget.is_default ? "Every month" : `${formatMonthYear(year, month)} only`}
                         </span>
                       </span>
-                      <span className="budget-row__status" style={{ color: isOver ? "var(--color-negative)" : "var(--color-text-secondary)" }}>
+                      <span className={`budget-row__status${isOver ? " budget-row__status--over" : ""}`}>
                         {isOver
                           ? `${formatIDRCompact(spent - budget.amount)} over`
                           : `${formatIDRCompact(budget.amount - spent)} left`}
                       </span>
                       <span className="budget-row__chevron" aria-hidden="true">›</span>
                     </span>
-                    <ProgressBar pct={pct} />
+                    <BudgetMeter pct={pct} />
                     <span className="budget-row__figures">
                       <span>{formatIDR(spent)} spent of {formatIDR(budget.amount)}</span>
                       <span>{Math.round(pct)}%</span>
@@ -355,8 +308,8 @@ export default function BudgetPage() {
                 );
               })
             )}
-          </div>
-        </section>}
+          </section>
+        )}
       </div>
 
       <BudgetSheet
