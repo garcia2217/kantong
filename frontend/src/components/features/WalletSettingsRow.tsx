@@ -10,8 +10,6 @@ interface WalletSettingsRowProps {
   isSettingDefault: boolean;
 }
 
-const actionClass = "min-h-11 rounded-[var(--radius-md)] px-3 text-[var(--text-sm)] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]";
-
 export function WalletSettingsRow({
   wallet,
   onEdit,
@@ -21,35 +19,33 @@ export function WalletSettingsRow({
   isSettingDefault,
 }: WalletSettingsRowProps) {
   return (
-    <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="break-words font-medium text-[var(--color-text-primary)]">{wallet.name}</p>
-          {wallet.is_default && (
-            <span className="rounded-full bg-[var(--color-positive-bg)] px-2 py-0.5 text-[var(--text-xs)] font-medium text-[var(--color-positive)]">
-              Default
-            </span>
-          )}
+    <div className="settings-row">
+      <span className="settings-row__icon" aria-hidden="true">👛</span>
+      <div className="settings-row__body">
+        <div className="settings-row__name-line">
+          <p className="settings-row__name">{wallet.name}</p>
+          {wallet.is_default && <span className="settings-badge">Default</span>}
         </div>
-        <p className="mt-1 text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-          Current balance · {formatIDR(wallet.balance)}
+        <p className="settings-row__meta">
+          <span className="sr-only">Current balance </span>
+          <span className="settings-row__balance">{formatIDR(wallet.balance)}</span>
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-1 sm:justify-end">
+      <div className="settings-row__actions">
         {!wallet.is_default && (
           <button
             type="button"
-            className={`${actionClass} text-[var(--color-accent)] underline disabled:opacity-50`}
+            className="settings-pill"
             onClick={onSetDefault}
             disabled={isSettingDefault || isDeleting}
             aria-label={`Set ${wallet.name} as default wallet`}
           >
-            {isSettingDefault ? "Setting…" : "Set as default"}
+            {isSettingDefault ? "Setting…" : "Make default"}
           </button>
         )}
         <button
           type="button"
-          className={`${actionClass} text-[var(--color-text-primary)] underline`}
+          className="settings-pill settings-pill--ghost"
           onClick={onEdit}
           aria-label={`Edit ${wallet.name}`}
         >
@@ -57,7 +53,7 @@ export function WalletSettingsRow({
         </button>
         <button
           type="button"
-          className={`${actionClass} text-[var(--color-negative)] underline disabled:opacity-50`}
+          className="settings-pill settings-pill--ghost settings-pill--danger-text"
           onClick={onDelete}
           disabled={isDeleting || isSettingDefault}
           aria-label={`Delete ${wallet.name}`}

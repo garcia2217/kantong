@@ -1583,9 +1583,7 @@ a.ov-row:focus-visible {
 
 .settings-header h1 {
   color: var(--color-text-primary);
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-semibold);
-  letter-spacing: -0.025em;
+  font-size: clamp(26px, 6vw, 34px);
   line-height: var(--leading-tight);
 }
 
@@ -1593,6 +1591,331 @@ a.ov-row:focus-visible {
   margin-top: var(--space-1);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+}
+
+/* Account: a small forest panel, echoing the Overview balance. */
+.settings-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--color-nav-bg);
+  color: var(--color-nav-fg);
+  box-shadow: var(--shadow-card);
+}
+
+@media (prefers-color-scheme: dark) {
+  .settings-account { border: 1px solid var(--color-nav-border); }
+}
+
+.settings-account__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-pill);
+  background: var(--color-nav-indicator);
+  color: var(--color-primary-fg);
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.settings-account__label {
+  color: var(--color-nav-muted);
+  font-size: var(--text-sm);
+}
+
+.settings-account__name {
+  overflow: hidden;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-account__logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-nav-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-nav-fg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.settings-account__logout:hover { background: var(--color-nav-hover); }
+
+.settings-account__logout:focus-visible {
+  outline: 2px solid var(--color-nav-indicator);
+  outline-offset: 2px;
+}
+
+.settings-card {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-card);
+}
+
+.settings-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-card__title {
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.settings-card__subtitle {
+  max-width: 48ch;
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  min-height: 44px;
+  margin: -6px calc(-1 * var(--space-2)) 0 0;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.settings-toggle svg { transition: transform 0.2s ease; }
+.settings-toggle[aria-expanded="false"] svg { transform: rotate(-90deg); }
+.settings-toggle:hover { background: var(--color-bg-hover); }
+
+.settings-list > * + * { border-top: 1px solid var(--color-border); }
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.settings-row__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--color-bg-subtle);
+  font-size: 20px;
+}
+
+.settings-row__body { min-width: 0; }
+
+.settings-row__name-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-row__name {
+  min-width: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.settings-row__meta {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.settings-row__balance {
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
+  font-size: var(--text-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  grid-column: 2;
+}
+
+.settings-badge {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-positive-bg);
+  color: var(--color-positive);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.settings-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.settings-pill--ghost {
+  border-color: transparent;
+  background: transparent;
+}
+
+.settings-pill--danger-text { color: var(--color-negative); }
+
+.settings-pill--danger {
+  border-color: var(--color-negative);
+  background: var(--color-negative-bg);
+  color: var(--color-negative);
+}
+
+.settings-pill:hover:not(:disabled) { background: var(--color-bg-hover); }
+.settings-pill--danger:hover:not(:disabled) { background: var(--color-negative-bg); filter: brightness(0.96); }
+.settings-pill:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.settings-add-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 52px;
+  padding: 0 var(--space-5);
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-accent);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-add-row:hover { background: var(--color-bg-hover); }
+
+.settings-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-positive-bg);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+}
+
+.settings-notice button,
+.settings-text-button {
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.settings-text-button { text-decoration: underline; }
+
+.settings-inline-error {
+  padding: var(--space-3) var(--space-5) 0;
+  color: var(--color-negative);
+  font-size: var(--text-sm);
+}
+
+.settings-state { padding: var(--space-5); }
+
+.settings-state p {
+  margin-bottom: var(--space-3);
+  color: var(--color-negative);
+  font-size: var(--text-base);
+}
+
+.settings-empty {
+  padding: var(--space-8) var(--space-5);
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+  text-align: center;
+}
+
+.settings-skeleton-row {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 0 var(--space-5);
+}
+
+.settings-skeleton-row + .settings-skeleton-row { border-top: 1px solid var(--color-border); }
+
+.settings-skeleton {
+  display: block;
+  width: 60%;
+  height: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-subtle);
+  animation: transactions-pulse 1.5s ease-in-out infinite;
+}
+
+.settings-delete__note {
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+}
+
+.settings-delete__error {
+  color: var(--color-negative);
+  font-size: var(--text-sm);
+}
+
+:is(.settings-toggle, .settings-pill, .settings-add-row, .settings-notice button, .settings-text-button):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (min-width: 640px) {
+  .settings-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .settings-row__actions { grid-column: auto; justify-content: flex-end; }
 }
 
 @media (max-width: 639px) {
@@ -1603,14 +1926,22 @@ a.ov-row:focus-visible {
     min-height: 64px;
     display: flex;
     align-items: center;
-    margin: -16px -16px var(--space-5);
+    margin: -16px -16px var(--space-2);
     padding: var(--space-2) var(--space-4);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-bg-app);
   }
 
-  .settings-header h1 { font-size: var(--text-lg); }
+  .settings-header h1 { font-size: var(--text-xl); }
   .settings-header p { display: none; }
+
+  .settings-row { padding: var(--space-4); }
+  .settings-account__logout { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-toggle svg { transition: none; }
+  .settings-skeleton { animation: none; }
 }
 
 /* Debts */

@@ -92,6 +92,7 @@ type DeleteTarget =
 export default function SettingsPage() {
     const router = useRouter();
     const logout = useAuthStore((s) => s.logout);
+    const username = useAuthStore((s) => s.user?.username);
     const queryClient = useQueryClient();
 
     const [walletSheet, setWalletSheet] = useState<WalletSheetState>({
@@ -173,62 +174,10 @@ export default function SettingsPage() {
         ? "This wallet has transactions. Move them to another wallet before deleting it."
         : "Could not confirm wallet deletion. Refresh the list before retrying.";
 
-    const sectionCardStyle: React.CSSProperties = {
-        background: "var(--color-bg-elevated)",
-        border: "0.5px solid var(--color-border)",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
-    };
-
-    const sectionHeaderStyle: React.CSSProperties = {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "var(--space-3) var(--space-4)",
-        borderBottom: "0.5px solid var(--color-border)",
-    };
-
-    const addRowStyle: React.CSSProperties = {
-        display: "flex",
-        alignItems: "center",
-        gap: "var(--space-2)",
-        width: "100%",
-        minHeight: 44,
-        padding: "var(--space-2) var(--space-4)",
-        background: "transparent",
-        border: "none",
-        borderTop: "0.5px solid var(--color-border)",
-        cursor: "pointer",
-        color: "var(--color-accent)",
-        fontSize: "var(--text-sm)",
-        fontWeight: "var(--weight-medium)",
-        textAlign: "left" as const,
-    };
-
-    const dividerStyle: React.CSSProperties = {
-        margin: "0 var(--space-4)",
-        height: "0.5px",
-        background: "var(--color-border)",
-    };
-
-    const skeletonRow = (
-        <div
-            style={{
-                height: 52,
-                display: "flex",
-                alignItems: "center",
-                padding: "var(--space-2) var(--space-4)",
-                gap: "var(--space-3)",
-            }}
-        >
-            <div
-                style={{
-                    flex: 1,
-                    height: 16,
-                    background: "var(--color-bg-subtle)",
-                    borderRadius: "var(--radius-sm)",
-                }}
-            />
+    const skeletonRows = (
+        <div aria-hidden="true">
+            <div className="settings-skeleton-row"><span className="settings-skeleton" /></div>
+            <div className="settings-skeleton-row"><span className="settings-skeleton" /></div>
         </div>
     );
 
@@ -239,254 +188,157 @@ export default function SettingsPage() {
                     <h1>Settings</h1>
                     <p>Manage your wallets, categories, and connected services.</p>
                 </header>
+                <section aria-label="Account" className="settings-account">
+                    <span className="settings-account__avatar" aria-hidden="true">
+                        {(username ?? "K").charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <p className="settings-account__label">Signed in as</p>
+                        <p className="settings-account__name">{username ? `@${username}` : "Your Kantong account"}</p>
+                    </div>
+                    <button type="button" onClick={handleLogout} className="settings-account__logout">
+                        <LogoutIcon />
+                        Log out
+                    </button>
+                </section>
+
                 {notice && (
-                    <div role="status" className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-positive-bg)] px-4 py-2 text-[var(--color-text-primary)]">
-                        <span>{notice}</span>
-                        <button type="button" onClick={() => setNotice(null)} className="min-h-11 rounded-[var(--radius-md)] px-2 text-[var(--text-sm)] font-medium text-[var(--color-accent)] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]">
+                    <div role="status" className="settings-notice">
+                        <span>✓ {notice}</span>
+                        <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification">
                             Dismiss
                         </button>
                     </div>
                 )}
 
                 {/* ── Wallets section ─────────────────────────────────────────── */}
-                <section>
-                    <div style={sectionCardStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <h2
-                                style={{
-                                    fontSize: "var(--text-base)",
-                                    fontWeight: "var(--weight-semibold)",
-                                    color: "var(--color-text-primary)",
-                                }}
-                            >
-                                Wallets
-                            </h2>
-                            <button
-                                onClick={() => setWalletsOpen((o) => !o)}
-                                aria-expanded={walletsOpen}
-                                aria-label={walletsOpen ? "Collapse wallets" : "Expand wallets"}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "var(--space-1)",
-                                    background: "none",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    color: "var(--color-text-tertiary)",
-                                    fontSize: "var(--text-sm)",
-                                    minHeight: 44,
-                                    padding: "0 var(--space-1)",
-                                }}
-                            >
-                                {wallets.length}{" "}
-                                {wallets.length === 1 ? "wallet" : "wallets"}
-                                <span
-                                    style={{
-                                        display: "inline-flex",
-                                        transition: "transform 0.2s ease",
-                                        transform: walletsOpen ? "rotate(0deg)" : "rotate(-90deg)",
-                                    }}
-                                >
-                                    <ChevronDown />
-                                </span>
-                            </button>
+                <section aria-labelledby="settings-wallets-title" className="settings-card">
+                    <div className="settings-card__head">
+                        <div className="min-w-0">
+                            <h2 id="settings-wallets-title" className="settings-card__title">Wallets</h2>
+                            <p className="settings-card__subtitle">The default wallet is used when a Telegram message doesn&apos;t name one.</p>
                         </div>
-
-                        {walletsOpen && (
-                            <>
-                                <p style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-text-secondary)", fontSize: "var(--text-sm)" }}>
-                                    Used when a Telegram transaction does not name a wallet.
-                                </p>
-                                {setDefaultWallet.isError && (
-                                    <p role="alert" style={{ padding: "0 var(--space-4) var(--space-3)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
-                                        Could not change the default wallet. Try again.
-                                    </p>
-                                )}
-                                {walletsError && wallets.length > 0 && (
-                                    <p role="alert" style={{ padding: "0 var(--space-4) var(--space-3)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
-                                        Wallets could not be refreshed. <button type="button" onClick={() => void refetchWallets()} style={{ minHeight: 44, color: "var(--color-accent)", textDecoration: "underline" }}>Try again</button>
-                                    </p>
-                                )}
-                                {walletsLoading ? (
-                                    <>
-                                        {skeletonRow}
-                                        <div style={dividerStyle} />
-                                        {skeletonRow}
-                                    </>
-                                ) : walletsError && wallets.length === 0 ? (
-                                    <div role="alert" style={{ padding: "var(--space-4)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
-                                        <p>Could not load wallets.</p>
-                                        <button type="button" onClick={() => void refetchWallets()} style={{ minHeight: 44, color: "var(--color-accent)", textDecoration: "underline" }}>
-                                            Try again
-                                        </button>
-                                    </div>
-                                ) : wallets.length === 0 ? (
-                                    <p
-                                        style={{
-                                            padding: "var(--space-6) var(--space-4)",
-                                            textAlign: "center",
-                                            fontSize: "var(--text-sm)",
-                                            color: "var(--color-text-tertiary)",
-                                        }}
-                                    >
-                                        No wallets yet. Add one to track where your money is held.
-                                    </p>
-                                ) : (
-                                    orderedWallets.map((wallet, idx) => (
-                                        <div key={wallet.id}>
-                                            {idx > 0 && <div style={dividerStyle} />}
-                                            <WalletSettingsRow
-                                                wallet={wallet}
-                                                onEdit={() =>
-                                                    setWalletSheet({
-                                                        open: true,
-                                                        wallet,
-                                                    })
-                                                }
-                                                onDelete={() => openWalletDelete(wallet)}
-                                                onSetDefault={() => setDefaultWallet.mutate(wallet.id)}
-                                                isDeleting={
-                                                    deleteWallet.isPending &&
-                                                    deleteWallet.variables === wallet.id
-                                                }
-                                                isSettingDefault={
-                                                    setDefaultWallet.isPending &&
-                                                    setDefaultWallet.variables === wallet.id
-                                                }
-                                            />
-                                        </div>
-                                    ))
-                                )}
-
-                                <button
-                                    onClick={() => setWalletSheet({ open: true })}
-                                    style={addRowStyle}
-                                >
-                                    <PlusIcon />
-                                    Add wallet
-                                </button>
-                            </>
-                        )}
+                        <button
+                            type="button"
+                            className="settings-toggle"
+                            onClick={() => setWalletsOpen((o) => !o)}
+                            aria-expanded={walletsOpen}
+                            aria-label={walletsOpen ? "Collapse wallets" : "Expand wallets"}
+                        >
+                            {wallets.length} {wallets.length === 1 ? "wallet" : "wallets"}
+                            <ChevronDown />
+                        </button>
                     </div>
-                </section>
 
-                {/* ── Categories section ───────────────────────────────────────── */}
-                <section>
-                    <div style={sectionCardStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <h2
-                                style={{
-                                    fontSize: "var(--text-base)",
-                                    fontWeight: "var(--weight-semibold)",
-                                    color: "var(--color-text-primary)",
-                                }}
-                            >
-                                Categories
-                            </h2>
-                            <button
-                                onClick={() => setCategoriesOpen((o) => !o)}
-                                aria-expanded={categoriesOpen}
-                                aria-label={categoriesOpen ? "Collapse categories" : "Expand categories"}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "var(--space-1)",
-                                    background: "none",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    color: "var(--color-text-tertiary)",
-                                    fontSize: "var(--text-sm)",
-                                    minHeight: 44,
-                                    padding: "0 var(--space-1)",
-                                }}
-                            >
-                                {categories.length} total
-                                <span
-                                    style={{
-                                        display: "inline-flex",
-                                        transition: "transform 0.2s ease",
-                                        transform: categoriesOpen ? "rotate(0deg)" : "rotate(-90deg)",
-                                    }}
-                                >
-                                    <ChevronDown />
-                                </span>
-                            </button>
-                        </div>
-
-                        {categoriesOpen && (
-                            categoriesLoading ? (
-                                <>
-                                    {skeletonRow}
-                                    <div style={dividerStyle} />
-                                    {skeletonRow}
-                                </>
-                            ) : categoriesError && categories.length === 0 ? (
-                                <div role="alert" style={{ padding: "var(--space-4)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
-                                    <p>Could not load categories.</p>
-                                    <button type="button" onClick={() => void refetchCategories()} style={{ minHeight: 44, color: "var(--color-accent)", textDecoration: "underline" }}>
+                    {walletsOpen && (
+                        <>
+                            {setDefaultWallet.isError && (
+                                <p role="alert" className="settings-inline-error">
+                                    Could not change the default wallet. Try again.
+                                </p>
+                            )}
+                            {walletsError && wallets.length > 0 && (
+                                <p role="alert" className="settings-inline-error">
+                                    Wallets could not be refreshed.{" "}
+                                    <button type="button" className="settings-text-button" onClick={() => void refetchWallets()}>Try again</button>
+                                </p>
+                            )}
+                            {walletsLoading ? (
+                                skeletonRows
+                            ) : walletsError && wallets.length === 0 ? (
+                                <div role="alert" className="settings-state">
+                                    <p>Could not load wallets.</p>
+                                    <button type="button" className="settings-pill" onClick={() => void refetchWallets()}>
                                         Try again
                                     </button>
                                 </div>
+                            ) : wallets.length === 0 ? (
+                                <p className="settings-empty">No wallets yet. Add one to track where your money is held.</p>
                             ) : (
-                                <>
-                                    {categoriesError && (
-                                        <p role="alert" style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-negative)", fontSize: "var(--text-sm)" }}>
-                                            Categories could not be refreshed. <button type="button" onClick={() => void refetchCategories()} style={{ minHeight: 44, color: "var(--color-accent)", textDecoration: "underline" }}>Try again</button>
-                                        </p>
-                                    )}
-                                    <CategorySettingsGroup
-                                        type="income"
-                                        categories={incomeCategories}
-                                        onAdd={() => setCategorySheet({ open: true, defaultType: "income" })}
-                                        onEdit={(category) => setCategorySheet({ open: true, category })}
-                                        onDelete={openCategoryDelete}
-                                        deletingId={deleteCategory.isPending ? deleteCategory.variables : undefined}
-                                    />
-                                    <CategorySettingsGroup
-                                        type="expense"
-                                        categories={expenseCategories}
-                                        onAdd={() => setCategorySheet({ open: true, defaultType: "expense" })}
-                                        onEdit={(category) => setCategorySheet({ open: true, category })}
-                                        onDelete={openCategoryDelete}
-                                        deletingId={deleteCategory.isPending ? deleteCategory.variables : undefined}
-                                    />
-                                </>
-                            )
-                        )}
+                                <div className="settings-list">
+                                    {orderedWallets.map((wallet) => (
+                                        <WalletSettingsRow
+                                            key={wallet.id}
+                                            wallet={wallet}
+                                            onEdit={() => setWalletSheet({ open: true, wallet })}
+                                            onDelete={() => openWalletDelete(wallet)}
+                                            onSetDefault={() => setDefaultWallet.mutate(wallet.id)}
+                                            isDeleting={deleteWallet.isPending && deleteWallet.variables === wallet.id}
+                                            isSettingDefault={setDefaultWallet.isPending && setDefaultWallet.variables === wallet.id}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            <button type="button" className="settings-add-row" onClick={() => setWalletSheet({ open: true })}>
+                                <PlusIcon />
+                                Add wallet
+                            </button>
+                        </>
+                    )}
+                </section>
+
+                {/* ── Categories section ───────────────────────────────────────── */}
+                <section aria-labelledby="settings-categories-title" className="settings-card">
+                    <div className="settings-card__head">
+                        <div className="min-w-0">
+                            <h2 id="settings-categories-title" className="settings-card__title">Categories</h2>
+                            <p className="settings-card__subtitle">Built-in categories can&apos;t be edited; your own can.</p>
+                        </div>
+                        <button
+                            type="button"
+                            className="settings-toggle"
+                            onClick={() => setCategoriesOpen((o) => !o)}
+                            aria-expanded={categoriesOpen}
+                            aria-label={categoriesOpen ? "Collapse categories" : "Expand categories"}
+                        >
+                            {categories.length} total
+                            <ChevronDown />
+                        </button>
                     </div>
+
+                    {categoriesOpen && (
+                        categoriesLoading ? (
+                            skeletonRows
+                        ) : categoriesError && categories.length === 0 ? (
+                            <div role="alert" className="settings-state">
+                                <p>Could not load categories.</p>
+                                <button type="button" className="settings-pill" onClick={() => void refetchCategories()}>
+                                    Try again
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                {categoriesError && (
+                                    <p role="alert" className="settings-inline-error">
+                                        Categories could not be refreshed.{" "}
+                                        <button type="button" className="settings-text-button" onClick={() => void refetchCategories()}>Try again</button>
+                                    </p>
+                                )}
+                                <CategorySettingsGroup
+                                    type="income"
+                                    categories={incomeCategories}
+                                    onAdd={() => setCategorySheet({ open: true, defaultType: "income" })}
+                                    onEdit={(category) => setCategorySheet({ open: true, category })}
+                                    onDelete={openCategoryDelete}
+                                    deletingId={deleteCategory.isPending ? deleteCategory.variables : undefined}
+                                />
+                                <CategorySettingsGroup
+                                    type="expense"
+                                    categories={expenseCategories}
+                                    onAdd={() => setCategorySheet({ open: true, defaultType: "expense" })}
+                                    onEdit={(category) => setCategorySheet({ open: true, category })}
+                                    onDelete={openCategoryDelete}
+                                    deletingId={deleteCategory.isPending ? deleteCategory.variables : undefined}
+                                />
+                            </>
+                        )
+                    )}
                 </section>
 
                 {/* ── Telegram section ────────────────────────────────────────── */}
                 <TelegramLinkSection />
 
-                {/* Mobile-only: log out (sidebar is hidden below md) */}
-                <section className="md:hidden" aria-label="Account">
-                    <div style={sectionCardStyle}>
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="rounded-[var(--radius-lg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: "var(--space-2)",
-                                width: "100%",
-                                minHeight: 48,
-                                padding: "var(--space-3) var(--space-4)",
-                                background: "transparent",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: "var(--text-base)",
-                                fontWeight: "var(--weight-medium)",
-                                color: "var(--color-text-secondary)",
-                            }}
-                        >
-                            <LogoutIcon />
-                            Log out
-                        </button>
-                    </div>
-                </section>
             </div>
 
             {/* ── Sheets ──────────────────────────────────────────────────────── */}
@@ -515,25 +367,25 @@ export default function SettingsPage() {
                         <p className="text-[var(--color-text-primary)]">
                             Delete <strong>{deleteTarget.kind === "wallet" ? deleteTarget.wallet.name : deleteTarget.category.name}</strong>?
                         </p>
-                        <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">
+                        <p className="settings-delete__note">
                             {deleteTarget.kind === "wallet"
                                 ? "Only wallets without transactions can be deleted. If this is your default wallet, another wallet will become the default."
                                 : "Its budgets will be deleted, and past transactions will become uncategorized."} This cannot be undone.
                         </p>
                         {deleteTarget.kind === "wallet" && deleteWallet.isError && (
-                            <div role="alert" className="text-[var(--text-sm)] text-[var(--color-negative)]">
+                            <div role="alert" className="settings-delete__error">
                                 <p>{walletDeleteError}</p>
                                 {!walletDeleteBlocked && (
-                                    <button type="button" data-sheet-no-dirty className="min-h-11 text-[var(--color-accent)] underline" onClick={() => { void refetchWallets(); setDeleteTarget(null); }}>
+                                    <button type="button" data-sheet-no-dirty className="settings-text-button" onClick={() => { void refetchWallets(); setDeleteTarget(null); }}>
                                         Refresh wallets
                                     </button>
                                 )}
                             </div>
                         )}
                         {deleteTarget.kind === "category" && deleteCategory.isError && (
-                            <div role="alert" className="text-[var(--text-sm)] text-[var(--color-negative)]">
+                            <div role="alert" className="settings-delete__error">
                                 <p>Could not confirm category deletion. Refresh the list before retrying.</p>
-                                <button type="button" data-sheet-no-dirty className="min-h-11 text-[var(--color-accent)] underline" onClick={() => { void refetchCategories(); setDeleteTarget(null); }}>
+                                <button type="button" data-sheet-no-dirty className="settings-text-button" onClick={() => { void refetchCategories(); setDeleteTarget(null); }}>
                                     Refresh categories
                                 </button>
                             </div>
@@ -544,7 +396,7 @@ export default function SettingsPage() {
                                 data-sheet-no-dirty
                                 onClick={() => setDeleteTarget(null)}
                                 disabled={isDeleting}
-                                className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border-strong)] px-4 text-[var(--color-text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] disabled:opacity-50"
+                                className="settings-pill"
                             >
                                 Cancel
                             </button>
@@ -556,7 +408,7 @@ export default function SettingsPage() {
                                     if (deleteTarget.kind === "wallet") deleteWallet.mutate(deleteTarget.wallet.id);
                                     else deleteCategory.mutate(deleteTarget.category.id);
                                 }}
-                                className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-negative)] bg-[var(--color-negative-bg)] px-4 font-medium text-[var(--color-negative)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] disabled:opacity-50"
+                                className="settings-pill settings-pill--danger"
                             >
                                 {isDeleting ? "Deleting…" : deleteTarget.kind === "wallet" ? "Delete wallet" : "Delete category"}
                             </button>
