@@ -1101,6 +1101,13 @@
 /* ─── Landing: FAQ ───────────────────────────────────────────────────────── */
 .lp-faq { background: var(--lp-cream-deep); }
 
+/* Green-600 lands at 4.49:1 on the deeper cream; nudge it darker here only. */
+.lp-faq .lp-eyebrow { color: #19694a; }
+
+@media (prefers-color-scheme: dark) {
+  .lp-faq .lp-eyebrow { color: var(--lp-money-in); }
+}
+
 .lp-faq__grid {
   display: grid;
   gap: var(--space-8);

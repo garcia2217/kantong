@@ -15,16 +15,7 @@ export function SpendingBreakdownChart({ data }: SpendingBreakdownChartProps) {
 
   if (data.length === 0 || total <= 0) {
     return (
-      <div
-        style={{
-          minHeight: 220,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "var(--color-text-secondary)",
-          fontSize: "var(--text-sm)",
-        }}
-      >
+      <div className="spending-chart__empty">
         No spending data available yet.
       </div>
     );
@@ -45,12 +36,12 @@ export function SpendingBreakdownChart({ data }: SpendingBreakdownChartProps) {
   }));
 
   return (
-    <figure style={{ margin: 0 }}>
+    <figure className="spending-chart">
       <svg
         role="img"
         aria-label={`Spending breakdown. ${largestCategory.name} is the largest category at ${largestCategory.calculatedPercentage.toFixed(1)} percent.`}
         viewBox={`0 0 ${CHART_SIZE} ${CHART_SIZE}`}
-        style={{ display: "block", width: "100%", maxWidth: 240, height: "auto", margin: "0 auto" }}
+        className="spending-chart__svg"
       >
         <circle
           cx={CHART_CENTER}
