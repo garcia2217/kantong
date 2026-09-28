@@ -7,7 +7,6 @@ import { userService } from "@/src/lib/api/services/users";
 
 const CODE_LIFETIME_MS = 5 * 60 * 1000;
 const BOT_URL = "https://t.me/garcia_finance_bot";
-const actionClass = "inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] px-4 text-[var(--text-sm)] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] disabled:opacity-50";
 
 export function TelegramLinkSection() {
   const user = useAuthStore((state) => state.user);
@@ -66,65 +65,64 @@ export function TelegramLinkSection() {
   };
 
   return (
-    <section aria-labelledby="telegram-settings-title" className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-3">
-        <h2 id="telegram-settings-title" className="font-semibold text-[var(--color-text-primary)]">Telegram</h2>
-        <span className={`rounded-full px-2 py-1 text-[var(--text-xs)] font-medium ${isConnected ? "bg-[var(--color-positive-bg)] text-[var(--color-positive)]" : "bg-[var(--color-tag-bg)] text-[var(--color-text-secondary)]"}`}>
+    <section aria-labelledby="telegram-settings-title" className="settings-card">
+      <div className="settings-card__head">
+        <div className="min-w-0">
+          <h2 id="telegram-settings-title" className="settings-card__title">Telegram</h2>
+          <p className="settings-card__subtitle">Record money by texting the Kantong bot, like &ldquo;kopi 25rb&rdquo;.</p>
+        </div>
+        <span className={`settings-badge${isConnected ? "" : " settings-badge--muted"}`}>
           {isConnected ? "Connected" : "Not connected"}
         </span>
       </div>
 
       {isConnected ? (
-        <p className="px-4 py-4 text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-          Your Telegram account is linked. You can record transactions with the bot.
-        </p>
+        <div className="settings-telegram">
+          <p>Your Telegram account is linked. Send the bot a message and it lands in your transactions.</p>
+          <a href={BOT_URL} target="_blank" rel="noopener noreferrer" className="settings-pill settings-telegram__self-start">
+            Open Telegram bot
+          </a>
+        </div>
       ) : (
-        <div className="flex flex-col gap-3 px-4 py-4">
-          <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-            Link Telegram to record transactions through the bot.
-          </p>
-
+        <div className="settings-telegram">
           {linkCode && !isExpired ? (
             <>
-              <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-                Copy this command, open the bot, and send it as a message.
-              </p>
-              <code className="break-all rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] px-4 py-3 text-center text-[var(--text-base)] font-semibold text-[var(--color-text-primary)]">
-                {command}
-              </code>
-              <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">
+              <p>Copy this command, open the bot, and send it as a message.</p>
+              <code className="settings-telegram__code">{command}</code>
+              <p className="settings-telegram__timer">
                 Code expires in {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}
               </p>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" className={`${actionClass} bg-[var(--color-accent)] text-[var(--color-accent-fg)]`} onClick={() => void handleCopy()}>
+              <div className="settings-telegram__actions">
+                <button type="button" className="btn-primary" onClick={() => void handleCopy()}>
                   Copy command
                 </button>
-                <a href={BOT_URL} target="_blank" rel="noopener noreferrer" className={`${actionClass} border border-[var(--color-border-strong)] text-[var(--color-text-primary)]`}>
+                <a href={BOT_URL} target="_blank" rel="noopener noreferrer" className="settings-pill">
                   Open Telegram bot
                 </a>
               </div>
-              {copyStatus === "copied" && <p role="status" className="text-[var(--text-sm)] text-[var(--color-positive)]">Command copied.</p>}
-              {copyStatus === "failed" && <p role="alert" className="text-[var(--text-sm)] text-[var(--color-negative)]">Could not copy automatically. Select and copy the command above.</p>}
-              <button type="button" className={`${actionClass} self-start text-[var(--color-accent)] underline`} onClick={() => checkConnection.mutate()} disabled={checkConnection.isPending}>
+              {copyStatus === "copied" && <p role="status" className="settings-telegram__ok">✓ Command copied.</p>}
+              {copyStatus === "failed" && <p role="alert" className="settings-telegram__error">Could not copy automatically. Select and copy the command above.</p>}
+              <button type="button" className="settings-text-button settings-telegram__self-start" onClick={() => checkConnection.mutate()} disabled={checkConnection.isPending}>
                 {checkConnection.isPending ? "Checking…" : "Check connection"}
               </button>
-              {connectionStatus && <p role="status" className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">{connectionStatus}</p>}
+              {connectionStatus && <p role="status">{connectionStatus}</p>}
             </>
           ) : (
             <>
-              {isExpired && <p role="alert" className="text-[var(--text-sm)] text-[var(--color-negative)]">This code has expired. Generate a new one to connect.</p>}
-              <button type="button" className={`${actionClass} w-full bg-[var(--color-accent)] text-[var(--color-accent-fg)]`} onClick={() => generateCode.mutate(Date.now())} disabled={generateCode.isPending}>
+              <p>Link Telegram to record transactions through the bot. It takes under a minute.</p>
+              {isExpired && <p role="alert" className="settings-telegram__error">This code has expired. Generate a new one to connect.</p>}
+              <button type="button" className="btn-primary w-full" onClick={() => generateCode.mutate(Date.now())} disabled={generateCode.isPending}>
                 {generateCode.isPending ? "Generating…" : isExpired ? "Generate new code" : "Generate link code"}
               </button>
               {isExpired && (
-                <button type="button" className={`${actionClass} self-start text-[var(--color-accent)] underline`} onClick={() => checkConnection.mutate()} disabled={checkConnection.isPending}>
+                <button type="button" className="settings-text-button settings-telegram__self-start" onClick={() => checkConnection.mutate()} disabled={checkConnection.isPending}>
                   {checkConnection.isPending ? "Checking…" : "Already sent it? Check connection"}
                 </button>
               )}
             </>
           )}
-          {generateCode.isError && <p role="alert" className="text-[var(--text-sm)] text-[var(--color-negative)]">Could not generate a link code. Try again.</p>}
-          {checkConnection.isError && <p role="alert" className="text-[var(--text-sm)] text-[var(--color-negative)]">Could not check your Telegram connection. Try again.</p>}
+          {generateCode.isError && <p role="alert" className="settings-telegram__error">Could not generate a link code. Try again.</p>}
+          {checkConnection.isError && <p role="alert" className="settings-telegram__error">Could not check your Telegram connection. Try again.</p>}
         </div>
       )}
     </section>

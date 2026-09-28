@@ -9,8 +9,6 @@ interface CategorySettingsGroupProps {
   deletingId?: string;
 }
 
-const actionClass = "min-h-11 rounded-[var(--radius-md)] px-3 text-[var(--text-sm)] font-medium underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]";
-
 export function CategorySettingsGroup({
   type,
   categories,
@@ -22,37 +20,28 @@ export function CategorySettingsGroup({
   const title = type === "income" ? "Income" : "Expense";
 
   return (
-    <section aria-label={`${title} categories`} className="border-t border-[var(--color-border)]">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-[var(--color-bg-subtle)] px-4 py-2">
-        <h3 className="text-[var(--text-sm)] font-semibold text-[var(--color-text-primary)]">
-          {title} <span className="font-normal text-[var(--color-text-secondary)]">({categories.length})</span>
+    <section aria-label={`${title} categories`} className="settings-group">
+      <div className="settings-group__head">
+        <h3 className="settings-group__title">
+          {title} <span className="settings-group__count">({categories.length})</span>
         </h3>
-        <button
-          type="button"
-          className="min-h-11 rounded-[var(--radius-md)] px-3 text-[var(--text-sm)] font-medium text-[var(--color-accent)] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
-          onClick={onAdd}
-        >
-          Add {type.toLowerCase()}
+        <button type="button" className="settings-pill settings-pill--ghost settings-pill--accent" onClick={onAdd}>
+          <span aria-hidden="true">＋</span> Add {type.toLowerCase()}
         </button>
       </div>
       {categories.length === 0 ? (
-        <p className="px-4 py-4 text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-          No {type} categories yet.
-        </p>
+        <p className="settings-group__empty">No {type} categories yet.</p>
       ) : (
         categories.map((category) => (
-          <div key={category.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border)] px-4 py-2">
-            <div className="min-w-0">
-              <p className="break-words font-medium text-[var(--color-text-primary)]">{category.name}</p>
-              {category.user_id === null && (
-                <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">Built-in category</p>
-              )}
-            </div>
-            {category.user_id !== null && (
-              <div className="flex flex-wrap gap-1">
+          <div key={category.id} className="settings-category">
+            <p className="settings-category__name">{category.name}</p>
+            {category.user_id === null ? (
+              <span className="settings-badge settings-badge--muted">Built-in</span>
+            ) : (
+              <div className="settings-category__actions">
                 <button
                   type="button"
-                  className={`${actionClass} text-[var(--color-text-primary)]`}
+                  className="settings-pill settings-pill--ghost"
                   onClick={() => onEdit(category)}
                   aria-label={`Edit ${category.name} ${type} category`}
                 >
@@ -60,7 +49,7 @@ export function CategorySettingsGroup({
                 </button>
                 <button
                   type="button"
-                  className={`${actionClass} text-[var(--color-negative)] disabled:opacity-50`}
+                  className="settings-pill settings-pill--ghost settings-pill--danger-text"
                   onClick={() => onDelete(category)}
                   disabled={deletingId === category.id}
                   aria-label={`Delete ${category.name} ${type} category`}
