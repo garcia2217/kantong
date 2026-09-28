@@ -231,6 +231,38 @@ body {
   background: var(--color-bg-hover);
 }
 
+/* ─── Form fields ────────────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field__label {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.field__error {
+  color: var(--color-negative);
+  font-size: var(--text-sm);
+}
+
+/* The sheets draw their borders inline as "0.5px solid var(--color-border)".
+   Redefining the token on the control itself makes that border strong enough
+   to mark the field as editable without touching every sheet. */
+.field :is(input, select, textarea) {
+  --color-border: var(--color-border-strong);
+}
+
+.field :is(input, select, textarea)::placeholder { color: var(--color-text-tertiary); }
+
+.field :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
 /* ─── App Shell ──────────────────────────────────────────────────────────── */
 .app-main {
   padding-bottom: calc(var(--space-4) + 64px + env(safe-area-inset-bottom));

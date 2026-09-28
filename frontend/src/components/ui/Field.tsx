@@ -7,20 +7,13 @@ interface FieldProps {
 
 export function Field({ label, htmlFor, error, children }: FieldProps) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-      <label
-        htmlFor={htmlFor}
-        style={{
-          fontSize: "var(--text-sm)",
-          fontWeight: "var(--weight-medium)",
-          color: "var(--color-text-secondary)",
-        }}
-      >
+    <div className="field">
+      <label htmlFor={htmlFor} className="field__label">
         {label}
       </label>
       {children}
       {error && (
-        <p id={htmlFor ? `${htmlFor}-error` : undefined} role="alert" style={{ fontSize: "var(--text-sm)", color: "var(--color-negative)" }}>
+        <p id={htmlFor ? `${htmlFor}-error` : undefined} role="alert" className="field__error">
           {error}
         </p>
       )}
@@ -28,13 +21,14 @@ export function Field({ label, htmlFor, error, children }: FieldProps) {
   );
 }
 
+// Inputs sit on the elevated surface so they read as editable, not disabled.
+// Focus styling lives in globals.css (.field) so every sheet gets the same ring.
 export const inputBaseStyle: React.CSSProperties = {
   width: "100%",
   minHeight: 44,
   fontSize: 16,
   padding: "var(--space-2) var(--space-3)",
-  background: "var(--color-bg-subtle)",
+  background: "var(--color-bg-elevated)",
   borderRadius: "var(--radius-md)",
   color: "var(--color-text-primary)",
-  outline: "none",
 };
